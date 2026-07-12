@@ -59,6 +59,7 @@ export interface IEmployee {
   gender: "F" | "M";
   role: "ADMIN" | "ROUTE_MANAGER" | "EMPLOYEE";
   frontSeatPriority: boolean; // women / sick / medical front-seat priority
+  phone?: string; // contact number — visible to all passengers
 }
 
 const EmployeeSchema = new Schema<IEmployee>({
@@ -71,6 +72,7 @@ const EmployeeSchema = new Schema<IEmployee>({
     default: "EMPLOYEE",
   },
   frontSeatPriority: { type: Boolean, default: false },
+  phone: String,
 });
 
 /* ------------------------------------------------------------------ Route */
@@ -147,6 +149,7 @@ export interface IGuestRequest {
   _id: Types.ObjectId;
   name: string;
   gender: "F" | "M";
+  phone?: string;
   homeRouteCode: string;
   pointName: string; // boarding point (morning) or drop point (evening)
   emergency: boolean;
@@ -188,6 +191,7 @@ const DailyTripSchema = new Schema<IDailyTrip>({
     {
       name: { type: String, required: true },
       gender: { type: String, enum: ["F", "M"], required: true },
+      phone: String,
       homeRouteCode: { type: String, default: "" },
       pointName: { type: String, required: true },
       emergency: { type: Boolean, default: false },
@@ -219,6 +223,95 @@ const TemporaryVehicleChangeSchema = new Schema<ITemporaryVehicleChange>({
   dateFrom: { type: String, required: true },
   dateTo: { type: String, required: true },
   reason: String,
+});
+
+/* -------------------------------------------------------------- LateNotice
+ * A passenger informs the micro manager they're running a few minutes late.
+ * Only 5-10 minutes is allowed; the manager acknowledges (hold briefly) or
+ * rejects (the micro must start). Monitored by admin. */
+
+export const LATE_STATUSES = ["PENDING", "ACKNOWLEDGED", "REJECTED"] as const;
+
+export interface ILateNotice {
+  _id: Types.ObjectId;
+  tripId: Types.ObjectId;
+  employeeId: Types.ObjectId;
+  minutes: number; // 5-10
+  note?: string;
+  status: (typeof LATE_STATUSES)[number];
+  createdAt: Date;
+}
+
+const LateNoticeSchema = new Schema<ILateNotice>({
+  tripId: { type: Schema.Types.ObjectId, ref: "DailyTrip", required: true },
+  employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+  minutes: { type: Number, required: true, min: 1, max: 10 },
+  note: String,
+  status: { type: String, enum: LATE_STATUSES, default: "PENDING" },
+  createdAt: { type: Date, default: Date.now },
+});
+LateNoticeSchema.index({ tripId: 1, employeeId: 1 }, { unique: true });
+
+/* ------------------------------------------------------------- DriverDelay
+ * The driver is late reaching the first stop; the micro manager (or admin)
+ * records it in the system so passengers and admin can see it. */
+
+export interface IDriverDelay {
+  _id: Types.ObjectId;
+  routeId: Types.ObjectId;
+  date: string; // YYYY-MM-DD
+  tripType: TripType;
+  minutes: number;
+  note?: string;
+  reportedBy: string; // name
+  createdAt: Date;
+}
+
+const DriverDelaySchema = new Schema<IDriverDelay>({
+  routeId: { type: Schema.Types.ObjectId, ref: "Route", required: true },
+  date: { type: String, required: true },
+  tripType: { type: String, enum: TRIP_TYPES, required: true },
+  minutes: { type: Number, required: true, min: 1 },
+  note: String,
+  reportedBy: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+/* ------------------------------------------------------------- LeaveRecord
+ * Leave entries (fed by the HRM/leave system, or manual). When HRM sync is
+ * enabled, employees on leave are auto-marked Not Going for both trips of
+ * the covered dates; when disabled, attendance stays fully manual. */
+
+export interface ILeaveRecord {
+  _id: Types.ObjectId;
+  employeeId: Types.ObjectId;
+  dateFrom: string; // inclusive
+  dateTo: string; // inclusive
+  source: "HRM" | "MANUAL";
+  note?: string;
+  createdAt: Date;
+}
+
+const LeaveRecordSchema = new Schema<ILeaveRecord>({
+  employeeId: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+  dateFrom: { type: String, required: true },
+  dateTo: { type: String, required: true },
+  source: { type: String, enum: ["HRM", "MANUAL"], default: "HRM" },
+  note: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
+/* ----------------------------------------------------------------- Setting */
+
+export interface ISetting {
+  _id: Types.ObjectId;
+  key: string;
+  value: unknown;
+}
+
+const SettingSchema = new Schema<ISetting>({
+  key: { type: String, required: true, unique: true },
+  value: Schema.Types.Mixed,
 });
 
 /* ------------------------------------------------------------ Announcement */
@@ -261,3 +354,15 @@ export const TemporaryVehicleChange =
 export const Announcement =
   (models.Announcement as mongoose.Model<IAnnouncement>) ??
   model<IAnnouncement>("Announcement", AnnouncementSchema);
+export const LateNotice =
+  (models.LateNotice as mongoose.Model<ILateNotice>) ??
+  model<ILateNotice>("LateNotice", LateNoticeSchema);
+export const DriverDelay =
+  (models.DriverDelay as mongoose.Model<IDriverDelay>) ??
+  model<IDriverDelay>("DriverDelay", DriverDelaySchema);
+export const LeaveRecord =
+  (models.LeaveRecord as mongoose.Model<ILeaveRecord>) ??
+  model<ILeaveRecord>("LeaveRecord", LeaveRecordSchema);
+export const Setting =
+  (models.Setting as mongoose.Model<ISetting>) ??
+  model<ISetting>("Setting", SettingSchema);

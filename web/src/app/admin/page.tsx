@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation";
 import {
-  Building2, Bus, Megaphone, Plus, RefreshCcw, Route as RouteIcon, Trash2, Users,
+  Activity, Building2, Bus, CalendarX, Megaphone, Plus, RefreshCcw,
+  Route as RouteIcon, Timer, Trash2, Users,
 } from "lucide-react";
 import { dbConnect } from "@/lib/db";
 import {
-  Announcement, Employee, Provider, Route, TemporaryVehicleChange, Vehicle,
+  Announcement, DailyTrip, DriverDelay, Employee, LateNotice, LeaveRecord,
+  Provider, Route, Setting, TemporaryVehicleChange, Vehicle,
 } from "@/lib/models";
 import { todayStr } from "@/lib/trips";
 import { requireUser } from "@/lib/auth";
 import {
-  assignPassenger, createAnnouncement, createEmployee, createProvider,
-  createRoute, createTempVehicleChange, createVehicle, removeAssignment,
-  removeTempVehicleChange,
+  addLeaveRecord, assignPassenger, createAnnouncement, createEmployee,
+  createProvider, createRoute, createTempVehicleChange, createVehicle,
+  removeAssignment, removeLeaveRecord, removeTempVehicleChange,
+  toggleHrmLeaveSync,
 } from "@/app/actions";
 import { Badge, Card } from "@/components/ui";
 
@@ -38,6 +41,7 @@ export default async function AdminPage() {
   if (user.role !== "ADMIN") redirect("/");
 
   await dbConnect();
+  const date = todayStr();
   const [providers, vehicles, routes, changes, employees, announcements] =
     await Promise.all([
       Provider.find().sort({ name: 1 }),
@@ -47,6 +51,15 @@ export default async function AdminPage() {
       Employee.find().sort({ empCode: 1 }),
       Announcement.find().sort({ createdAt: -1 }).limit(10),
     ]);
+  const todaysTrips = await DailyTrip.find({ date });
+  const tripById = new Map(todaysTrips.map((t) => [String(t._id), t]));
+  const [lateNotices, driverDelays, leaves, syncSetting] = await Promise.all([
+    LateNotice.find({ tripId: { $in: todaysTrips.map((t) => t._id) } }).sort({ createdAt: -1 }),
+    DriverDelay.find({ date }).sort({ createdAt: -1 }),
+    LeaveRecord.find({ dateTo: { $gte: date } }).sort({ dateFrom: 1 }).limit(20),
+    Setting.findOne({ key: "hrmLeaveSync" }),
+  ]);
+  const hrmSyncEnabled = syncSetting ? Boolean(syncSetting.value) : true;
   const providerById = new Map(providers.map((p) => [String(p._id), p.name]));
   const routeById = new Map(routes.map((r) => [String(r._id), r]));
   const vehicleById = new Map(vehicles.map((v) => [String(v._id), v]));
@@ -73,6 +86,142 @@ export default async function AdminPage() {
       <p className="mt-1 text-sm text-slate-500">
         Providers, fleet, people, routes, and temporary vehicle changes.
       </p>
+
+      <Card className="mt-6 overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+          <Activity size={16} className="text-indigo-500" />
+          <h2 className="font-bold tracking-tight">Operations Monitor · {date}</h2>
+          <form action={toggleHrmLeaveSync} className="ml-auto">
+            <button
+              type="submit"
+              title="When enabled, the HRM leave system auto-marks passengers Not Going for their leave dates. Attendance stays manual when disabled."
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                hrmSyncEnabled
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-slate-200 text-slate-500 hover:bg-slate-300"
+              }`}
+            >
+              HRM leave sync: {hrmSyncEnabled ? "ON" : "OFF"}
+            </button>
+          </form>
+        </div>
+        <div className="grid gap-4 p-4 lg:grid-cols-3">
+          <div>
+            <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <Timer size={12} />
+              Late passengers
+            </h3>
+            {lateNotices.length === 0 ? (
+              <p className="mt-1.5 text-sm text-slate-400">None reported today.</p>
+            ) : (
+              <ul className="mt-1.5 space-y-1.5 text-sm">
+                {lateNotices.map((n) => {
+                  const trip = tripById.get(String(n.tripId));
+                  const r = trip ? routes.find((x) => String(x._id) === String(trip.routeId)) : null;
+                  const emp = employees.find((e) => String(e._id) === String(n.employeeId));
+                  return (
+                    <li key={String(n._id)} className="flex items-center gap-1.5">
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-medium">{emp?.name ?? "?"}</span>
+                        <span className="text-slate-400">
+                          {" "}· {r?.code} {trip?.tripType === "MORNING_PICKUP" ? "AM" : "PM"} · ~{n.minutes}m
+                        </span>
+                      </span>
+                      <Badge
+                        color={
+                          n.status === "ACKNOWLEDGED" ? "green" : n.status === "REJECTED" ? "red" : "amber"
+                        }
+                      >
+                        {n.status.toLowerCase()}
+                      </Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <Bus size={12} />
+              Driver delays
+            </h3>
+            {driverDelays.length === 0 ? (
+              <p className="mt-1.5 text-sm text-slate-400">None reported today.</p>
+            ) : (
+              <ul className="mt-1.5 space-y-1.5 text-sm">
+                {driverDelays.map((d) => {
+                  const r = routes.find((x) => String(x._id) === String(d.routeId));
+                  return (
+                    <li key={String(d._id)} className="min-w-0 truncate">
+                      <span className="font-medium">{r?.code ?? "?"}</span>
+                      <span className="text-slate-400">
+                        {" "}{d.tripType === "MORNING_PICKUP" ? "AM" : "PM"} · ~{d.minutes}m
+                        {d.note && ` — ${d.note}`} · by {d.reportedBy}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <div>
+            <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <CalendarX size={12} />
+              On leave (HRM feed)
+            </h3>
+            {leaves.length === 0 ? (
+              <p className="mt-1.5 text-sm text-slate-400">No current leave records.</p>
+            ) : (
+              <ul className="mt-1.5 space-y-1.5 text-sm">
+                {leaves.map((l) => {
+                  const emp = employees.find((e) => String(e._id) === String(l.employeeId));
+                  const active = l.dateFrom <= date && l.dateTo >= date;
+                  return (
+                    <li key={String(l._id)} className="flex items-center gap-1.5">
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-medium">{emp?.name ?? "?"}</span>
+                        <span className="text-slate-400">
+                          {" "}· {l.dateFrom}
+                          {l.dateTo !== l.dateFrom && `→${l.dateTo}`}
+                        </span>
+                      </span>
+                      {active && hrmSyncEnabled && <Badge color="amber">auto not-going</Badge>}
+                      <form action={removeLeaveRecord}>
+                        <input type="hidden" name="id" value={String(l._id)} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-slate-200 px-1.5 text-xs text-slate-400 hover:border-rose-300 hover:text-rose-600"
+                        >
+                          ✕
+                        </button>
+                      </form>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <form action={addLeaveRecord} className="mt-2 flex flex-wrap items-center gap-1.5">
+              <select name="employeeId" className={`${INPUT} min-w-0 flex-1 text-xs`}>
+                {employees
+                  .filter((e) => e.role !== "ADMIN")
+                  .map((e) => (
+                    <option key={String(e._id)} value={String(e._id)}>
+                      {e.name}
+                    </option>
+                  ))}
+              </select>
+              <input type="date" name="dateFrom" defaultValue={date} required className={`${INPUT} text-xs`} />
+              <input type="date" name="dateTo" defaultValue={date} className={`${INPUT} text-xs`} />
+              <button
+                type="submit"
+                className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+              >
+                Add leave
+              </button>
+            </form>
+          </div>
+        </div>
+      </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
         <Card className="overflow-hidden lg:col-span-2">
@@ -184,6 +333,7 @@ export default async function AdminPage() {
                 <tr>
                   <th className={TH}>Code</th>
                   <th className={TH}>Name</th>
+                  <th className={TH}>Phone</th>
                   <th className={TH}>Role</th>
                   <th className={TH}>Front seat</th>
                   <th className={TH}>Route</th>
@@ -198,6 +348,7 @@ export default async function AdminPage() {
                     <tr key={String(e._id)} className="hover:bg-slate-50/50">
                       <td className={`${TD} font-mono text-xs`}>{e.empCode}</td>
                       <td className={`${TD} font-medium`}>{e.name}</td>
+                      <td className={`${TD} text-xs text-slate-500`}>{e.phone || "—"}</td>
                       <td className={TD}>
                         <Badge
                           color={
@@ -219,8 +370,9 @@ export default async function AdminPage() {
             action={createEmployee}
             className="grid grid-cols-3 gap-2 border-t border-slate-100 p-3 sm:grid-cols-6"
           >
-            <input name="empCode" required placeholder="E011" className={INPUT} />
+            <input name="empCode" required placeholder="E034" className={INPUT} />
             <input name="name" required placeholder="Full name" className={INPUT} />
+            <input name="phone" placeholder="Phone" className={INPUT} />
             <select name="gender" className={INPUT}>
               <option value="M">Male</option>
               <option value="F">Female</option>

@@ -39,7 +39,13 @@ export interface TripInput {
   tripType: TripType;
   stops: { name: string; seq: number }[]; // evening drop order
   corridorStopNames: string[]; // stops shared with overlapping routes
-  vehicle: { code: string; capacity: number; seatLayout?: number[] } | null;
+  vehicle: {
+    code: string;
+    capacity: number;
+    seatLayout?: number[];
+    driverName?: string;
+    driverPhone?: string;
+  } | null;
   originalVehicleCode?: string; // set when a temporary replacement is active
   afterCutoff: boolean;
   policyAfterCutoff: "KEEP_RESERVED" | "MANAGER_RELEASE";
@@ -60,7 +66,7 @@ export interface ScoredGuest extends GuestInput {
 
 export interface TripPlan {
   tripType: TripType;
-  vehicle: { code: string; capacity: number; seatLayout?: number[] } | null;
+  vehicle: TripInput["vehicle"];
   alerts: string[];
   blocking: boolean;
   confirmed: RegularInput[];

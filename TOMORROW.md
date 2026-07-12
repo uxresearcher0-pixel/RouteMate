@@ -1,4 +1,34 @@
-# Status (updated 2026-07-10 late night — Phase 2 + mobile-first redesign complete)
+# Status (updated 2026-07-12 — operations features complete)
+
+## Latest batch (2026-07-12)
+
+- **Jatrabari route (R-JAT)** with the user's schedule (Jatrabari 07:10 →
+  Dayaganj 07:15 → Rajdhani 07:20 → Tati Bazar 07:25 → Kakrail 07:35 →
+  Holy Family Red Crescent 07:45 → Banani 11 08:00) + calculated evening
+  times; R-PAN and R-NAR filled with calculated stop times, regulars,
+  attendance, and guests (38 employees total, 4 active routes, 6 vehicles).
+- **Contacts everywhere**: every employee and driver has a phone number,
+  shown in attendance lists, trip headers (driver), guest requests, and
+  profiles — all `tel:` links.
+- **Profiles**: avatar/name click → `/people/[empCode]` (contact, route,
+  home stop with times, today's status, leave records).
+- **Plan-change window**: cutoff is now derived per trip = first-stop
+  departure time − 10 minutes (falls back to fixed route cutoffs when a
+  route has no stop times). Badge shows "starts ~HH:MM · changes until
+  HH:MM / locked".
+- **Running late (passenger)**: 5–10 min notices to the micro manager, who
+  Holds (acknowledge) or "Can't wait" (reject — the micro must start).
+- **Driver delay**: manager/admin records the driver being late to the
+  first stop; shows as an alert on the trip and in the admin monitor.
+- **HRM leave sync**: LeaveRecord feed (admin simulates HRM) + admin ON/OFF
+  toggle; when ON, on-leave passengers are auto-marked Not Going for both
+  trips (badge "on leave (HRM)"); manual attendance works either way.
+- **Admin Operations Monitor**: today's late passengers, driver delays, and
+  leave records in one card.
+
+Deferred (needs product decision): a real HRM API integration (current
+LeaveRecord collection stands in for the feed); driver accounts (delays are
+recorded by manager/admin on the driver's behalf).
 
 ## Mobile-first pass (latest)
 

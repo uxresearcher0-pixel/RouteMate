@@ -6,8 +6,9 @@ import { cookies } from "next/headers";
 import { Types } from "mongoose";
 import { dbConnect } from "@/lib/db";
 import {
-  Announcement, DailyTrip, Employee, Provider, Route, TemporaryVehicleChange,
-  Vehicle, type TripType, type AttendanceStatus,
+  Announcement, DailyTrip, DriverDelay, Employee, LateNotice, LeaveRecord,
+  Provider, Route, Setting, TemporaryVehicleChange, Vehicle,
+  type TripType, type AttendanceStatus,
 } from "@/lib/models";
 import { computeTripPlan, cutoffInfo, ensureTrip } from "@/lib/trips";
 import { canManageRoute, getCurrentUser, isAdmin, SESSION_COOKIE } from "@/lib/auth";
@@ -88,6 +89,7 @@ export async function addGuestRequest(formData: FormData): Promise<void> {
   trip.guestRequests.push({
     name,
     gender: (formData.get("gender") === "F" ? "F" : "M") as "F" | "M",
+    phone: String(formData.get("phone") ?? "").trim(),
     homeRouteCode: String(formData.get("homeRouteCode") ?? "").trim(),
     pointName,
     emergency: formData.get("emergency") === "on",
@@ -204,6 +206,120 @@ export async function removeTempVehicleChange(formData: FormData): Promise<void>
   revalidatePath("/");
 }
 
+/* -------------------------------------------------------- late notices
+ * A passenger can inform the micro manager they're running late — only
+ * 5-10 minutes is tolerated; the manager acknowledges or rejects (the
+ * micro must start). The driver being late to the first stop is recorded
+ * by the manager/admin as a DriverDelay. Admin monitors all of it. */
+
+export async function reportLate(formData: FormData): Promise<void> {
+  const routeCode = String(formData.get("routeCode"));
+  const date = String(formData.get("date"));
+  const tripType = String(formData.get("tripType")) as TripType;
+  const minutes = Math.min(10, Math.max(5, parseInt(String(formData.get("minutes")), 10) || 5));
+  const note = String(formData.get("note") ?? "").trim();
+
+  const user = await getCurrentUser();
+  if (!user) return;
+  await dbConnect();
+  const route = await Route.findOne({ code: routeCode });
+  if (!route) return;
+  // only a regular passenger of this route may report being late for it
+  const isRegular = route.passengers.some((p) => String(p.employeeId) === String(user._id));
+  if (!isRegular && !canManageRoute(user, route)) return;
+
+  const trip = await ensureTrip(route, date, tripType);
+  await LateNotice.updateOne(
+    { tripId: trip._id, employeeId: user._id },
+    { $set: { minutes, note, status: "PENDING", createdAt: new Date() } },
+    { upsert: true },
+  );
+  revalidatePath(`/routes/${routeCode}`);
+  revalidatePath("/admin");
+}
+
+export async function resolveLateNotice(formData: FormData): Promise<void> {
+  const routeCode = String(formData.get("routeCode"));
+  const noticeId = String(formData.get("noticeId"));
+  const status = formData.get("status") === "ACKNOWLEDGED" ? "ACKNOWLEDGED" : "REJECTED";
+
+  const user = await getCurrentUser();
+  if (!user) return;
+  await dbConnect();
+  const route = await Route.findOne({ code: routeCode });
+  if (!route || !canManageRoute(user, route)) return;
+
+  await LateNotice.findByIdAndUpdate(noticeId, { status });
+  revalidatePath(`/routes/${routeCode}`);
+  revalidatePath("/admin");
+}
+
+export async function reportDriverDelay(formData: FormData): Promise<void> {
+  const routeCode = String(formData.get("routeCode"));
+  const date = String(formData.get("date"));
+  const tripType = String(formData.get("tripType")) as TripType;
+  const minutes = Math.max(1, parseInt(String(formData.get("minutes")), 10) || 5);
+  const note = String(formData.get("note") ?? "").trim();
+
+  const user = await getCurrentUser();
+  if (!user) return;
+  await dbConnect();
+  const route = await Route.findOne({ code: routeCode });
+  if (!route || !canManageRoute(user, route)) return;
+
+  await DriverDelay.create({
+    routeId: route._id, date, tripType, minutes, note, reportedBy: user.name,
+  });
+  revalidatePath(`/routes/${routeCode}`);
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+/* ------------------------------------------------- leave / HRM sync */
+
+export async function addLeaveRecord(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || !isAdmin(user)) return; // stands in for the HRM feed
+  const employeeId = String(formData.get("employeeId"));
+  const dateFrom = String(formData.get("dateFrom"));
+  const dateTo = String(formData.get("dateTo") || dateFrom);
+  if (!Types.ObjectId.isValid(employeeId) || !dateFrom) return;
+  await dbConnect();
+  await LeaveRecord.create({
+    employeeId: new Types.ObjectId(employeeId),
+    dateFrom,
+    dateTo,
+    source: "HRM",
+    note: String(formData.get("note") ?? "").trim(),
+  });
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function removeLeaveRecord(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || !isAdmin(user)) return;
+  await dbConnect();
+  await LeaveRecord.findByIdAndDelete(String(formData.get("id")));
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
+export async function toggleHrmLeaveSync(): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user || !isAdmin(user)) return;
+  await dbConnect();
+  const current = await Setting.findOne({ key: "hrmLeaveSync" });
+  const next = current ? !current.value : false; // default is enabled
+  await Setting.updateOne(
+    { key: "hrmLeaveSync" },
+    { $set: { value: next } },
+    { upsert: true },
+  );
+  revalidatePath("/admin");
+  revalidatePath("/");
+}
+
 /* ------------------------------------------------------ announcements */
 
 export async function createAnnouncement(formData: FormData): Promise<void> {
@@ -302,6 +418,7 @@ export async function createEmployee(formData: FormData): Promise<void> {
           ? String(formData.get("role"))
           : "EMPLOYEE",
         frontSeatPriority: formData.get("frontSeatPriority") === "on",
+        phone: String(formData.get("phone") ?? "").trim(),
       },
     },
     { upsert: true },

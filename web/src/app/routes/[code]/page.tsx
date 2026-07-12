@@ -1,18 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  AlertTriangle, ArrowLeft, Bus, CheckCircle2, ChevronDown, Lock, Megaphone,
-  Route as RouteIcon, Send, Sunrise, Sunset, UserPlus, Users,
+  AlertTriangle, ArrowLeft, Bus, CheckCircle2, ChevronDown, Clock3, Lock,
+  Megaphone, Phone, Route as RouteIcon, Send, Sunrise, Sunset, Timer,
+  UserPlus, Users,
 } from "lucide-react";
 import { dbConnect } from "@/lib/db";
-import { Announcement, Employee, type IDailyTrip } from "@/lib/models";
+import {
+  Announcement, DriverDelay, Employee, LateNotice, type IDailyTrip,
+} from "@/lib/models";
 import { computeTripPlan, getRouteByCode, todayStr } from "@/lib/trips";
 import type { TripPlan } from "@/lib/allocation";
 import type { TripType } from "@/lib/models";
 import { canManageRoute, requireUser } from "@/lib/auth";
 import {
   addGuestRequest, cancelGuestRequest, createAnnouncement, publishSeatPlan,
-  setAttendance, toggleGuestApproval,
+  reportDriverDelay, reportLate, resolveLateNotice, setAttendance,
+  toggleGuestApproval,
 } from "@/app/actions";
 import { Avatar, Badge, Card, SeatMap, SectionTitle } from "@/components/ui";
 import { TripTabs } from "@/components/trip-tabs";
@@ -22,35 +26,56 @@ export const dynamic = "force-dynamic";
 const INPUT_CLS =
   "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
+type EmpInfo = { name: string; empCode: string; phone?: string };
+
 function AttendanceList({
-  routeCode, date, tripType, trip, namesById, currentUserId, canManage, locked,
+  routeCode, date, tripType, trip, namesById, currentUserId, canManage, locked, leaveIds,
 }: {
   routeCode: string;
   date: string;
   tripType: TripType;
   trip: IDailyTrip;
-  namesById: Map<string, { name: string; empCode: string }>;
+  namesById: Map<string, EmpInfo>;
   currentUserId: string;
   canManage: boolean;
   locked: boolean;
+  leaveIds: string[];
 }) {
+  const onLeave = new Set(leaveIds);
   return (
     <ul className="divide-y divide-slate-100">
       {trip.attendance.map((a) => {
         const id = String(a.employeeId);
         const emp = namesById.get(id);
         if (!emp) return null;
-        const current = a.status;
-        const editable = canManage || (id === currentUserId && !locked);
+        const leave = onLeave.has(id);
+        const current = leave ? "NOT_GOING" : a.status;
+        const editable = !leave && (canManage || (id === currentUserId && !locked));
         return (
           <li key={id} className="flex items-center gap-2 py-2">
-            <Avatar name={emp.name} size="sm" />
+            <Link href={`/people/${emp.empCode}`} title="Open profile">
+              <Avatar name={emp.name} size="sm" />
+            </Link>
             <div className="min-w-0 flex-1">
-              <span className="text-sm font-medium">{emp.name}</span>
-              <span className="ml-1.5 text-[11px] text-slate-400">{emp.empCode}</span>
+              <Link
+                href={`/people/${emp.empCode}`}
+                className="text-sm font-medium hover:text-indigo-600"
+              >
+                {emp.name}
+              </Link>
               {id === currentUserId && <Badge color="blue">you</Badge>}
+              <div className="text-[11px] text-slate-400">
+                {emp.phone ? (
+                  <a href={`tel:${emp.phone}`} className="hover:text-indigo-600">
+                    {emp.phone}
+                  </a>
+                ) : (
+                  emp.empCode
+                )}
+              </div>
             </div>
-            {current === "NO_RESPONSE" && <Badge color="amber">no response</Badge>}
+            {leave && <Badge color="amber">on leave (HRM)</Badge>}
+            {!leave && current === "NO_RESPONSE" && <Badge color="amber">no response</Badge>}
             <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white">
               {(["GOING", "NOT_GOING"] as const).map((s) => (
                 <form key={s} action={setAttendance}>
@@ -82,6 +107,112 @@ function AttendanceList({
   );
 }
 
+/* --------------------------------------------- running-late notices */
+
+type LateInfo = {
+  id: string;
+  employeeId: string;
+  minutes: number;
+  note?: string;
+  status: string;
+};
+
+function LateSection({
+  routeCode, date, tripType, lateNotices, namesById, currentUserId, canManage, isRegular,
+}: {
+  routeCode: string;
+  date: string;
+  tripType: TripType;
+  lateNotices: LateInfo[];
+  namesById: Map<string, EmpInfo>;
+  currentUserId: string;
+  canManage: boolean;
+  isRegular: boolean;
+}) {
+  const mine = lateNotices.find((n) => n.employeeId === currentUserId);
+  const STATUS_COLOR: Record<string, "amber" | "green" | "red"> = {
+    PENDING: "amber",
+    ACKNOWLEDGED: "green",
+    REJECTED: "red",
+  };
+  return (
+    <section>
+      <SectionTitle>Running late</SectionTitle>
+      {lateNotices.length === 0 && (
+        <p className="py-1.5 text-sm text-slate-400">No late notices for this trip.</p>
+      )}
+      {lateNotices.length > 0 && (
+        <ul className="divide-y divide-slate-100">
+          {lateNotices.map((n) => {
+            const emp = namesById.get(n.employeeId);
+            return (
+              <li key={n.id} className="flex items-center gap-2 py-2 text-sm">
+                <Timer size={14} className="shrink-0 text-amber-500" />
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium">{emp?.name ?? "Unknown"}</span>
+                  <span className="text-slate-500"> · ~{n.minutes} min late</span>
+                  {n.note && <span className="text-xs text-slate-400"> — {n.note}</span>}
+                </span>
+                <Badge color={STATUS_COLOR[n.status] ?? "slate"}>
+                  {n.status.toLowerCase()}
+                </Badge>
+                {canManage && n.status === "PENDING" && (
+                  <span className="flex gap-1">
+                    {(["ACKNOWLEDGED", "REJECTED"] as const).map((s) => (
+                      <form key={s} action={resolveLateNotice}>
+                        <input type="hidden" name="routeCode" value={routeCode} />
+                        <input type="hidden" name="noticeId" value={n.id} />
+                        <input type="hidden" name="status" value={s} />
+                        <button
+                          type="submit"
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            s === "ACKNOWLEDGED"
+                              ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                              : "border border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-600"
+                          }`}
+                          title={
+                            s === "ACKNOWLEDGED"
+                              ? "Hold briefly (5-10 min max)"
+                              : "The micro must start"
+                          }
+                        >
+                          {s === "ACKNOWLEDGED" ? "Hold" : "Can't wait"}
+                        </button>
+                      </form>
+                    ))}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {isRegular && !mine && (
+        <form action={reportLate} className="mt-1 flex items-center gap-2">
+          <input type="hidden" name="routeCode" value={routeCode} />
+          <input type="hidden" name="date" value={date} />
+          <input type="hidden" name="tripType" value={tripType} />
+          <Clock3 size={14} className="shrink-0 text-slate-400" />
+          <select name="minutes" className={INPUT_CLS} style={{ maxWidth: 110 }}>
+            <option value="5">~5 min</option>
+            <option value="10">~10 min</option>
+          </select>
+          <input name="note" placeholder="Optional note" className={INPUT_CLS} />
+          <button
+            type="submit"
+            className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+          >
+            I&apos;m late
+          </button>
+        </form>
+      )}
+      <p className="mt-1.5 text-[11px] text-slate-400">
+        Only 5–10 minutes can be held — beyond that the micro must start.
+      </p>
+    </section>
+  );
+}
+
 function GuestList({
   routeCode, trip, plan, canManage,
 }: {
@@ -106,6 +237,14 @@ function GuestList({
               <span className="text-sm font-medium">{g.name}</span>
               <div className="truncate text-[11px] text-slate-400">
                 {g.homeRouteCode || "no home route"} → {g.pointName}
+                {g.phone && (
+                  <>
+                    {" · "}
+                    <a href={`tel:${g.phone}`} className="hover:text-indigo-600">
+                      {g.phone}
+                    </a>
+                  </>
+                )}
               </div>
             </div>
             {seated ? (
@@ -181,6 +320,7 @@ function GuestForm({
           <option value="F">Female</option>
         </select>
         <input name="homeRouteCode" placeholder="Home route (e.g. R-PAN)" className={INPUT_CLS} />
+        <input name="phone" placeholder="Contact number" className={INPUT_CLS} />
         <select name="pointName" className={INPUT_CLS}>
           {stopInfos.map((s) => {
             const t = tripType === "MORNING_PICKUP" ? s.morningTime : s.eveningTime;
@@ -209,9 +349,12 @@ function GuestForm({
   );
 }
 
+type DelayInfo = { id: string; minutes: number; note?: string; reportedBy: string };
+
 function TripPanel({
   label, icon, accent, routeCode, date, tripType, trip, plan, cutoff, afterCutoff,
-  namesById, stopInfos, currentUserId, canManage,
+  startsAt, leaveIds, lateNotices, driverDelays, namesById, stopInfos,
+  currentUserId, canManage, isRegular,
 }: {
   label: string;
   icon: React.ReactNode;
@@ -223,10 +366,15 @@ function TripPanel({
   plan: TripPlan;
   cutoff: string;
   afterCutoff: boolean;
-  namesById: Map<string, { name: string; empCode: string }>;
+  startsAt: string | null;
+  leaveIds: string[];
+  lateNotices: LateInfo[];
+  driverDelays: DelayInfo[];
+  namesById: Map<string, EmpInfo>;
   stopInfos: StopInfo[];
   currentUserId: string;
   canManage: boolean;
+  isRegular: boolean;
 }) {
   const used = plan.confirmed.length + plan.reserved.length + plan.approvedGuests.length;
   const published = trip.publishedPlan;
@@ -237,13 +385,16 @@ function TripPanel({
       <div className={`flex items-center gap-2 border-b border-slate-100 bg-gradient-to-r px-5 py-3.5 ${accent}`}>
         {icon}
         <h2 className="font-bold tracking-tight">{label}</h2>
+        {startsAt && <Badge color="slate">starts ~{startsAt}</Badge>}
         {afterCutoff ? (
-          <Badge color="red" title="Self-service attendance is locked; manager/admin can still edit">
+          <Badge color="red" title="Plan changes closed 10 min before start; manager/admin can still edit">
             <Lock size={10} />
             locked {cutoff}
           </Badge>
         ) : (
-          <Badge color="slate">locks {cutoff}</Badge>
+          <Badge color="green" title="You can change your plan until 10 min before the micro starts">
+            changes until {cutoff}
+          </Badge>
         )}
         <span className="ml-auto text-sm font-semibold tabular-nums">
           {used}/{plan.vehicle?.capacity ?? 0}
@@ -255,6 +406,20 @@ function TripPanel({
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <Bus size={14} className="text-slate-400" />
           <span className="font-medium text-slate-700">{plan.vehicle?.code ?? "—"}</span>
+          {plan.vehicle?.driverName && (
+            <span className="inline-flex items-center gap-1">
+              · {plan.vehicle.driverName}
+              {plan.vehicle.driverPhone && (
+                <a
+                  href={`tel:${plan.vehicle.driverPhone}`}
+                  className="inline-flex items-center gap-0.5 font-medium text-indigo-600"
+                >
+                  <Phone size={11} />
+                  {plan.vehicle.driverPhone}
+                </a>
+              )}
+            </span>
+          )}
           · {plan.availableSeatsForGuests} seat(s) open for guests
           <span className="ml-auto flex items-center gap-2">
             {published && (
@@ -295,6 +460,20 @@ function TripPanel({
           </div>
         ))}
 
+        {driverDelays.map((d) => (
+          <div
+            key={d.id}
+            className="flex items-start gap-2 rounded-xl bg-orange-50 px-3.5 py-2.5 text-sm text-orange-800 ring-1 ring-inset ring-orange-200"
+          >
+            <Timer size={15} className="mt-0.5 shrink-0" />
+            Driver running ~{d.minutes} min late to the first stop
+            {d.note && <span className="text-orange-700/80"> — {d.note}</span>}
+            <span className="ml-auto shrink-0 text-xs text-orange-600/70">
+              by {d.reportedBy}
+            </span>
+          </div>
+        ))}
+
         {/* booking first: seats, then guest requests, then attendance */}
         <section>
           <SectionTitle>Seats</SectionTitle>
@@ -329,8 +508,50 @@ function TripPanel({
             currentUserId={currentUserId}
             canManage={canManage}
             locked={afterCutoff}
+            leaveIds={leaveIds}
           />
         </section>
+
+        <LateSection
+          routeCode={routeCode}
+          date={date}
+          tripType={tripType}
+          lateNotices={lateNotices}
+          namesById={namesById}
+          currentUserId={currentUserId}
+          canManage={canManage}
+          isRegular={isRegular}
+        />
+
+        {canManage && (
+          <details className="group rounded-xl border border-dashed border-slate-200 open:border-solid open:bg-orange-50/30">
+            <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-sm font-semibold text-slate-500 marker:content-none hover:text-orange-600">
+              <Timer size={14} />
+              Report driver delay
+              <ChevronDown size={14} className="ml-auto transition group-open:rotate-180" />
+            </summary>
+            <form action={reportDriverDelay} className="flex items-center gap-2 p-3 pt-1">
+              <input type="hidden" name="routeCode" value={routeCode} />
+              <input type="hidden" name="date" value={date} />
+              <input type="hidden" name="tripType" value={tripType} />
+              <input
+                type="number"
+                name="minutes"
+                min={1}
+                defaultValue={10}
+                className={INPUT_CLS}
+                style={{ maxWidth: 90 }}
+              />
+              <input name="note" placeholder="Reason (e.g. traffic)" className={INPUT_CLS} />
+              <button
+                type="submit"
+                className="shrink-0 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600"
+              >
+                Report
+              </button>
+            </form>
+          </details>
+        )}
       </div>
     </Card>
   );
@@ -362,11 +583,42 @@ export default async function RouteCard({
     _id: { $in: route.passengers.map((p) => p.employeeId) },
   });
   const namesById = new Map(
-    employees.map((e) => [String(e._id), { name: e.name, empCode: e.empCode }]),
+    employees.map((e) => [
+      String(e._id),
+      { name: e.name, empCode: e.empCode, phone: e.phone },
+    ]),
   );
   const manager = route.routeManagerId
     ? await Employee.findById(route.routeManagerId)
     : null;
+
+  const [morningLate, eveningLate, delays] = await Promise.all([
+    LateNotice.find({ tripId: morning.trip._id }).sort({ createdAt: 1 }),
+    LateNotice.find({ tripId: evening.trip._id }).sort({ createdAt: 1 }),
+    DriverDelay.find({ routeId: route._id, date }).sort({ createdAt: 1 }),
+  ]);
+  const serializeLate = (
+    xs: typeof morningLate,
+  ): LateInfo[] =>
+    xs.map((n) => ({
+      id: String(n._id),
+      employeeId: String(n.employeeId),
+      minutes: n.minutes,
+      note: n.note,
+      status: n.status,
+    }));
+  const serializeDelays = (tripType: TripType): DelayInfo[] =>
+    delays
+      .filter((d) => d.tripType === tripType)
+      .map((d) => ({
+        id: String(d._id),
+        minutes: d.minutes,
+        note: d.note,
+        reportedBy: d.reportedBy,
+      }));
+  const isRegular = route.passengers.some(
+    (p) => String(p.employeeId) === String(user._id),
+  );
   const announcements = await Announcement.find({
     $or: [{ routeId: route._id }, { routeId: null }, { routeId: { $exists: false } }],
   })
@@ -387,6 +639,7 @@ export default async function RouteCard({
     })),
     currentUserId,
     canManage,
+    isRegular,
   };
 
   return (
@@ -508,6 +761,10 @@ export default async function RouteCard({
               plan={morning.plan}
               cutoff={morning.cutoff}
               afterCutoff={morning.afterCutoff}
+              startsAt={morning.startsAt}
+              leaveIds={morning.leaveEmployeeIds}
+              lateNotices={serializeLate(morningLate)}
+              driverDelays={serializeDelays("MORNING_PICKUP")}
               {...panelProps}
             />
           }
@@ -521,6 +778,10 @@ export default async function RouteCard({
               plan={evening.plan}
               cutoff={evening.cutoff}
               afterCutoff={evening.afterCutoff}
+              startsAt={evening.startsAt}
+              leaveIds={evening.leaveEmployeeIds}
+              lateNotices={serializeLate(eveningLate)}
+              driverDelays={serializeDelays("EVENING_DROPOFF")}
               {...panelProps}
             />
           }

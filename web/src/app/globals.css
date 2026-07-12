@@ -19,12 +19,62 @@ summary {
 button:active,
 a:active,
 summary:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
 }
+
+/* page + panel entrances */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+.animate-fade-in {
+  animation: fade-in 0.22s ease both;
+}
+
+/* smooth expand/collapse for <details> drawers (Chrome 131+, graceful elsewhere) */
+html {
+  interpolate-size: allow-keywords;
+}
+details::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size 0.3s cubic-bezier(0.21, 0.47, 0.32, 0.98),
+    content-visibility 0.3s allow-discrete;
+}
+details[open]::details-content {
+  block-size: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   button:active,
   a:active,
   summary:active {
     transform: none;
+  }
+  .animate-fade-in-up,
+  .animate-fade-in {
+    animation: none;
+  }
+  details::details-content {
+    transition: none;
   }
 }

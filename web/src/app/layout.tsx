@@ -51,7 +51,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-slate-100/70 text-slate-900">
         <TopNav user={navUser} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-5 sm:pt-8 md:pb-8">
-          {children}
+          <div className="animate-fade-in-up">{children}</div>
         </main>
         <footer className="hidden border-t border-slate-200 py-4 text-center text-xs text-slate-400 md:block">
           Organization Transport Management System · regulars first, guests on

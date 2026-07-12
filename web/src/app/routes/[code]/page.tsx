@@ -15,11 +15,12 @@ import type { TripType } from "@/lib/models";
 import { canManageRoute, requireUser } from "@/lib/auth";
 import {
   addGuestRequest, cancelGuestRequest, createAnnouncement, publishSeatPlan,
-  reportDriverDelay, reportLate, resolveLateNotice, setAttendance,
-  toggleGuestApproval,
+  reportDriverDelay, reportLate, resolveLateNotice, toggleGuestApproval,
 } from "@/app/actions";
 import { Avatar, Badge, Card, SeatMap, SectionTitle } from "@/components/ui";
 import { TripTabs } from "@/components/trip-tabs";
+import { AttendanceToggle } from "@/components/attendance-toggle";
+import { SubmitButton } from "@/components/pending";
 
 export const dynamic = "force-dynamic";
 
@@ -76,30 +77,15 @@ function AttendanceList({
             </div>
             {leave && <Badge color="amber">on leave (HRM)</Badge>}
             {!leave && current === "NO_RESPONSE" && <Badge color="amber">no response</Badge>}
-            <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white">
-              {(["GOING", "NOT_GOING"] as const).map((s) => (
-                <form key={s} action={setAttendance}>
-                  <input type="hidden" name="routeCode" value={routeCode} />
-                  <input type="hidden" name="date" value={date} />
-                  <input type="hidden" name="tripType" value={tripType} />
-                  <input type="hidden" name="employeeId" value={id} />
-                  <input type="hidden" name="status" value={s} />
-                  <button
-                    type="submit"
-                    disabled={!editable}
-                    className={`px-2.5 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                      current === s
-                        ? s === "GOING"
-                          ? "bg-emerald-500 text-white"
-                          : "bg-rose-500 text-white"
-                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-                    }`}
-                  >
-                    {s === "GOING" ? "Going" : "Not going"}
-                  </button>
-                </form>
-              ))}
-            </div>
+            <AttendanceToggle
+              routeCode={routeCode}
+              date={date}
+              tripType={tripType}
+              employeeId={id}
+              status={current}
+              disabled={!editable}
+              compact
+            />
           </li>
         );
       })}
@@ -163,8 +149,7 @@ function LateSection({
                         <input type="hidden" name="routeCode" value={routeCode} />
                         <input type="hidden" name="noticeId" value={n.id} />
                         <input type="hidden" name="status" value={s} />
-                        <button
-                          type="submit"
+                        <SubmitButton
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                             s === "ACKNOWLEDGED"
                               ? "bg-emerald-500 text-white hover:bg-emerald-600"
@@ -177,7 +162,7 @@ function LateSection({
                           }
                         >
                           {s === "ACKNOWLEDGED" ? "Hold" : "Can't wait"}
-                        </button>
+                        </SubmitButton>
                       </form>
                     ))}
                   </span>
@@ -198,12 +183,9 @@ function LateSection({
             <option value="10">~10 min</option>
           </select>
           <input name="note" placeholder="Optional note" className={INPUT_CLS} />
-          <button
-            type="submit"
-            className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
-          >
+          <SubmitButton className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600">
             I&apos;m late
-          </button>
+          </SubmitButton>
         </form>
       )}
       <p className="mt-1.5 text-[11px] text-slate-400">
@@ -260,28 +242,24 @@ function GuestList({
                   <input type="hidden" name="routeCode" value={routeCode} />
                   <input type="hidden" name="tripId" value={String(trip._id)} />
                   <input type="hidden" name="guestId" value={String(g._id)} />
-                  <button
-                    type="submit"
+                  <SubmitButton
                     title="Route manager approval (adds score / allows off-route points)"
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                       g.managerApproved
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "border border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600"
                     }`}
                   >
                     {g.managerApproved ? "Approved ✓" : "Approve"}
-                  </button>
+                  </SubmitButton>
                 </form>
                 <form action={cancelGuestRequest}>
                   <input type="hidden" name="routeCode" value={routeCode} />
                   <input type="hidden" name="tripId" value={String(trip._id)} />
                   <input type="hidden" name="guestId" value={String(g._id)} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-400 transition hover:border-rose-300 hover:text-rose-600"
-                  >
+                  <SubmitButton className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-400 hover:border-rose-300 hover:text-rose-600">
                     ✕
-                  </button>
+                  </SubmitButton>
                 </form>
               </>
             )}
@@ -338,12 +316,9 @@ function GuestForm({
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
           <input type="checkbox" name="frontSeatPriority" className="accent-indigo-600" /> Front-seat priority
         </label>
-        <button
-          type="submit"
-          className="col-span-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-        >
+        <SubmitButton className="col-span-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
           Submit for {tripType === "MORNING_PICKUP" ? "morning pickup" : "evening drop-off"}
-        </button>
+        </SubmitButton>
       </form>
     </details>
   );
@@ -434,13 +409,10 @@ function TripPanel({
                 <input type="hidden" name="routeCode" value={routeCode} />
                 <input type="hidden" name="date" value={date} />
                 <input type="hidden" name="tripType" value={tripType} />
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-700"
-                >
+                <SubmitButton className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700">
                   <Send size={11} />
                   {published ? "Republish" : "Publish seat plan"}
-                </button>
+                </SubmitButton>
               </form>
             )}
           </span>
@@ -544,12 +516,9 @@ function TripPanel({
                 style={{ maxWidth: 90 }}
               />
               <input name="note" placeholder="Reason (e.g. traffic)" className={INPUT_CLS} />
-              <button
-                type="submit"
-                className="shrink-0 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600"
-              >
+              <SubmitButton className="shrink-0 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600">
                 Report
-              </button>
+              </SubmitButton>
             </form>
           </details>
         )}
@@ -740,12 +709,9 @@ export default async function RouteCard({
             <input type="hidden" name="routeCode" value={route.code} />
             <input name="title" required placeholder="Title" className={INPUT_CLS} />
             <textarea name="body" required placeholder="Message" rows={2} className={INPUT_CLS} />
-            <button
-              type="submit"
-              className="justify-self-start rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
+            <SubmitButton className="justify-self-start rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700">
               Send
-            </button>
+            </SubmitButton>
           </form>
         </details>
       )}

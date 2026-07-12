@@ -7,8 +7,8 @@ import { Route, type IRoute, type TripType } from "@/lib/models";
 import { computeTripPlan, todayStr } from "@/lib/trips";
 import type { TripPlan } from "@/lib/allocation";
 import { requireUser } from "@/lib/auth";
-import { setAttendance } from "@/app/actions";
 import { Badge, Card, ProgressBar } from "@/components/ui";
+import { AttendanceToggle } from "@/components/attendance-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -66,30 +66,14 @@ function MyTripCard({
             <span className="min-w-0 flex-1 truncate text-xs text-slate-400">
               {t.hint ?? `${t.plan.vehicle?.code} · ${t.plan.availableSeatsForGuests} open`}
             </span>
-            <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white">
-              {(["GOING", "NOT_GOING"] as const).map((s) => (
-                <form key={s} action={setAttendance}>
-                  <input type="hidden" name="routeCode" value={route.code} />
-                  <input type="hidden" name="date" value={date} />
-                  <input type="hidden" name="tripType" value={t.tripType} />
-                  <input type="hidden" name="employeeId" value={userId} />
-                  <input type="hidden" name="status" value={s} />
-                  <button
-                    type="submit"
-                    disabled={t.locked}
-                    className={`px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                      t.status === s
-                        ? s === "GOING"
-                          ? "bg-emerald-500 text-white"
-                          : "bg-rose-500 text-white"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    {s === "GOING" ? "Going" : "Not going"}
-                  </button>
-                </form>
-              ))}
-            </div>
+            <AttendanceToggle
+              routeCode={route.code}
+              date={date}
+              tripType={t.tripType}
+              employeeId={userId}
+              status={t.status as "GOING" | "NOT_GOING" | "NO_RESPONSE"}
+              disabled={t.locked}
+            />
           </div>
         ))}
       </div>

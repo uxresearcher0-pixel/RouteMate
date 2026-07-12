@@ -3,6 +3,7 @@ import { AlertCircle, Bus, KeyRound, User } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { login } from "@/app/actions";
 import { Card } from "@/components/ui";
+import { SubmitButton } from "@/components/pending";
 
 export const dynamic = "force-dynamic";
 
@@ -75,12 +76,9 @@ export default async function LoginPage({
               />
             </span>
           </label>
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-          >
+          <SubmitButton className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
             Sign in
-          </button>
+          </SubmitButton>
         </form>
       </Card>
 

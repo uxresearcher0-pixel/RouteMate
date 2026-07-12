@@ -2,6 +2,7 @@
  * stop times, contacts, leave records, late notices).
  * Run: npm run seed  (drops and recreates the `transport` database content) */
 import mongoose, { type Types } from "mongoose";
+import bcrypt from "bcryptjs";
 import { dbConnect } from "../src/lib/db";
 import {
   Announcement, DailyTrip, DriverDelay, Employee, LateNotice, LeaveRecord,
@@ -94,18 +95,21 @@ async function main() {
   ];
   const allRegulars = [...aziRegulars, ...jatRegulars, ...panRegulars, ...narRegulars];
   const phone = (code: string) => `0171${code.slice(1).padStart(7, "0")}`;
+  // initial password per user: RouteMate@<empCode> (e.g. RouteMate@E001);
+  // users change it from their profile page after first sign-in
+  const pw = (code: string) => bcrypt.hashSync(`RouteMate@${code}`, 10);
 
   const employees = await Employee.insertMany([
     ...allRegulars.map(([empCode, name, gender, , frontSeatPriority]) => ({
       empCode, name, gender, frontSeatPriority, role: "EMPLOYEE" as const,
-      phone: phone(empCode),
+      phone: phone(empCode), passwordHash: pw(empCode),
     })),
-    { empCode: "E010", name: "Nadia", gender: "F", role: "EMPLOYEE", frontSeatPriority: true, phone: phone("E010") },
-    { empCode: "E100", name: "Employee A", gender: "M", role: "ROUTE_MANAGER", phone: phone("E100") },
-    { empCode: "E101", name: "Employee P", gender: "F", role: "ROUTE_MANAGER", phone: phone("E101") },
-    { empCode: "E102", name: "Employee N", gender: "M", role: "ROUTE_MANAGER", phone: phone("E102") },
-    { empCode: "E103", name: "Employee J", gender: "M", role: "ROUTE_MANAGER", phone: phone("E103") },
-    { empCode: "E999", name: "Transport Admin", gender: "M", role: "ADMIN", phone: phone("E999") },
+    { empCode: "E010", name: "Nadia", gender: "F", role: "EMPLOYEE", frontSeatPriority: true, phone: phone("E010"), passwordHash: pw("E010") },
+    { empCode: "E100", name: "Employee A", gender: "M", role: "ROUTE_MANAGER", phone: phone("E100"), passwordHash: pw("E100") },
+    { empCode: "E101", name: "Employee P", gender: "F", role: "ROUTE_MANAGER", phone: phone("E101"), passwordHash: pw("E101") },
+    { empCode: "E102", name: "Employee N", gender: "M", role: "ROUTE_MANAGER", phone: phone("E102"), passwordHash: pw("E102") },
+    { empCode: "E103", name: "Employee J", gender: "M", role: "ROUTE_MANAGER", phone: phone("E103"), passwordHash: pw("E103") },
+    { empCode: "E999", name: "Transport Admin", gender: "M", role: "ADMIN", phone: phone("E999"), passwordHash: pw("E999") },
   ]);
   const emp = new Map(employees.map((e) => [e.empCode, e]));
 

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, Bus, CalendarX, MapPin, Phone, Shield, Sunrise, Sunset,
+  ArrowLeft, Bus, CalendarX, CheckCircle2, KeyRound, MapPin, Phone, Shield,
+  Sunrise, Sunset,
 } from "lucide-react";
 import { dbConnect } from "@/lib/db";
 import { DailyTrip, Employee, LeaveRecord, Route } from "@/lib/models";
 import { todayStr } from "@/lib/trips";
 import { requireUser } from "@/lib/auth";
+import { changePassword } from "@/app/actions";
 import { Avatar, Badge, Card } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +21,14 @@ const ROLE_META: Record<string, { label: string; color: "red" | "blue" | "slate"
 
 export default async function PersonPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ empCode: string }>;
+  searchParams: Promise<{ pw?: string }>;
 }) {
-  await requireUser();
+  const viewer = await requireUser();
   const { empCode } = await params;
+  const { pw } = await searchParams;
   await dbConnect();
   const person = await Employee.findOne({ empCode: empCode.toUpperCase() });
   if (!person) notFound();
@@ -163,6 +168,56 @@ export default async function PersonPage({
               );
             })}
           </div>
+        </Card>
+      )}
+
+      {String(viewer._id) === String(person._id) && (
+        <Card className="mt-4 p-5">
+          <h2 className="flex items-center gap-1.5 text-sm font-bold tracking-tight">
+            <KeyRound size={14} className="text-slate-400" />
+            Change password
+          </h2>
+          {pw === "done" && (
+            <div className="mt-2 flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-inset ring-emerald-200">
+              <CheckCircle2 size={14} />
+              Password updated.
+            </div>
+          )}
+          {pw === "wrong" && (
+            <div className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-inset ring-rose-200">
+              Current password is incorrect.
+            </div>
+          )}
+          {pw === "short" && (
+            <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
+              New password must be at least 6 characters.
+            </div>
+          )}
+          <form action={changePassword} className="mt-3 space-y-2">
+            <input
+              type="password"
+              name="current"
+              required
+              autoComplete="current-password"
+              placeholder="Current password"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+            <input
+              type="password"
+              name="next"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              placeholder="New password (min 6 characters)"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Update password
+            </button>
+          </form>
         </Card>
       )}
 

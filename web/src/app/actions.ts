@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { Types } from "mongoose";
+import bcrypt from "bcryptjs";
 import { dbConnect } from "@/lib/db";
 import {
   Announcement, DailyTrip, DriverDelay, Employee, LateNotice, LeaveRecord,
@@ -16,16 +17,18 @@ import { canManageRoute, getCurrentUser, isAdmin, SESSION_COOKIE } from "@/lib/a
 /* ---------------------------------------------------------- session */
 
 export async function login(formData: FormData): Promise<void> {
-  // shared access code gate for public deployments (set ACCESS_CODE in the
-  // host's env; when unset — e.g. local dev — sign-in stays open)
-  const required = process.env.ACCESS_CODE;
-  if (required && String(formData.get("accessCode") ?? "") !== required) return;
+  const identifier = String(formData.get("identifier") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  if (!identifier || !password) redirect("/login?error=1");
 
-  const employeeId = String(formData.get("employeeId"));
   await dbConnect();
-  if (!Types.ObjectId.isValid(employeeId)) return;
-  const emp = await Employee.findById(employeeId);
-  if (!emp) return;
+  const emp = await Employee.findOne({
+    $or: [{ empCode: identifier.toUpperCase() }, { phone: identifier }],
+  }).select("+passwordHash");
+  if (!emp?.passwordHash || !(await bcrypt.compare(password, emp.passwordHash))) {
+    redirect("/login?error=1"); // wrong user or password — same message for both
+  }
+
   const store = await cookies();
   store.set(SESSION_COOKIE, String(emp._id), {
     httpOnly: true,
@@ -34,6 +37,24 @@ export async function login(formData: FormData): Promise<void> {
     maxAge: 60 * 60 * 24 * 30,
   });
   redirect("/");
+}
+
+/** Self-service password change (from the user's own profile page). */
+export async function changePassword(formData: FormData): Promise<void> {
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("next") ?? "");
+  const user = await getCurrentUser();
+  if (!user) return;
+  if (next.length < 6) redirect(`/people/${user.empCode}?pw=short`);
+
+  await dbConnect();
+  const emp = await Employee.findById(user._id).select("+passwordHash");
+  if (!emp?.passwordHash || !(await bcrypt.compare(current, emp.passwordHash))) {
+    redirect(`/people/${user.empCode}?pw=wrong`);
+  }
+  emp.passwordHash = await bcrypt.hash(next, 10);
+  await emp.save();
+  redirect(`/people/${user.empCode}?pw=done`);
 }
 
 export async function logout(): Promise<void> {
@@ -424,6 +445,10 @@ export async function createEmployee(formData: FormData): Promise<void> {
           : "EMPLOYEE",
         frontSeatPriority: formData.get("frontSeatPriority") === "on",
         phone: String(formData.get("phone") ?? "").trim(),
+        // optional: set or reset the user's password (admin-entered initial)
+        ...(String(formData.get("password") ?? "").length >= 6
+          ? { passwordHash: await bcrypt.hash(String(formData.get("password")), 10) }
+          : {}),
       },
     },
     { upsert: true },

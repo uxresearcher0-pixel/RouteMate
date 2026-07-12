@@ -373,6 +373,12 @@ export default async function AdminPage() {
             <input name="empCode" required placeholder="E034" className={INPUT} />
             <input name="name" required placeholder="Full name" className={INPUT} />
             <input name="phone" placeholder="Phone" className={INPUT} />
+            <input
+              name="password"
+              placeholder="Set/reset password"
+              title="Optional, min 6 chars — sets the password for a new employee, or resets it when the employee code already exists"
+              className={INPUT}
+            />
             <select name="gender" className={INPUT}>
               <option value="M">Male</option>
               <option value="F">Female</option>

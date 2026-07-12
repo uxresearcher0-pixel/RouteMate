@@ -60,6 +60,7 @@ export interface IEmployee {
   role: "ADMIN" | "ROUTE_MANAGER" | "EMPLOYEE";
   frontSeatPriority: boolean; // women / sick / medical front-seat priority
   phone?: string; // contact number — visible to all passengers
+  passwordHash?: string; // bcrypt; excluded from queries unless selected
 }
 
 const EmployeeSchema = new Schema<IEmployee>({
@@ -73,6 +74,7 @@ const EmployeeSchema = new Schema<IEmployee>({
   },
   frontSeatPriority: { type: Boolean, default: false },
   phone: String,
+  passwordHash: { type: String, select: false },
 });
 
 /* ------------------------------------------------------------------ Route */

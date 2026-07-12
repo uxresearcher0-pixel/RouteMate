@@ -37,7 +37,7 @@ the office at Banani 11.
 | Booking-first home | My-trip quick attendance, open seats per route, guest seat requests |
 | Route cards | Visual seat map per trip, guest approval, per-trip attendance, publishable seat-plan snapshots with drift detection |
 | Allocation engine | Pure TS module (Python reference in `algorithm/`), verified in parity |
-| Roles | Admin / Route Manager / Employee with cookie session (demo sign-in; real auth planned) |
+| Roles & auth | Admin / Route Manager / Employee · sign in with Employee ID or mobile number + password (bcrypt), self-service password change, admin reset |
 | Cutoffs | Self-service attendance locks at 08:00 / 16:00 per trip; managers override |
 | Admin | Providers, vehicles (with seat layouts), employees, routes & stops (with times), passenger assignment, temporary vehicle changes, announcements |
 | Reports | Attendance / no-shows / guest usage per route & direction over a date range |
@@ -68,6 +68,5 @@ Useful scripts (in `web/`):
 
 ## Roadmap (Phase 3)
 
-Real authentication (SSO/passwords), notifications, corridor editing UI,
-edit/deactivate CRUD, deployment (MongoDB Atlas), and a native mobile app with
-QR check-in and live vehicle tracking.
+SSO or SMS-OTP sign-in, notifications, corridor editing UI, edit/deactivate
+CRUD, and a native mobile app with QR check-in and live vehicle tracking.

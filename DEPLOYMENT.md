@@ -6,7 +6,12 @@ Production stack: **Vercel** (app, from the GitHub repo) + **MongoDB Atlas**
 | Env var       | Purpose                                                        |
 | ------------- | -------------------------------------------------------------- |
 | `MONGODB_URI` | Atlas connection string (falls back to localhost in dev)       |
-| `ACCESS_CODE` | Shared sign-in code — REQUIRED in production, or anyone online can sign in as admin |
+
+Authentication (since 2026-07-12): username/password. Users sign in with their
+**Employee ID or mobile number + password** (bcrypt-hashed in MongoDB). Seeded
+users get the initial password `RouteMate@<empCode>` (e.g. `RouteMate@E001`)
+and change it from their profile page; the admin can set/reset any password
+from the Admin → Employees form. The earlier `ACCESS_CODE` gate is retired.
 
 ## 1. Database — MongoDB Atlas (one of two ways)
 
@@ -48,10 +53,9 @@ MONGODB_URI="mongodb+srv://USER:PASS@.../transport" npm run seed
 
 ## Security notes for going live
 
-- `ACCESS_CODE` gates sign-in (added 2026-07-12). It's a shared code, not
-  real auth — fine for a pilot, but per-user passwords/SSO remain the
-  Phase 3 priority before wide rollout.
+- Per-user passwords are live; SSO or SMS-OTP can replace/augment them later
+  (OTP needs an SMS gateway account — Twilio, SSL Wireless, etc.).
 - The Atlas `0.0.0.0/0` allowlist is required because Vercel has no fixed
   egress IPs; the DB user's password is the actual protection.
-- Never commit `MONGODB_URI` or `ACCESS_CODE` — they live only in Vercel
-  env settings (the repo's `.gitignore` already excludes `.env*`).
+- Never commit `MONGODB_URI` — it lives only in Vercel env settings (the
+  repo's `.gitignore` already excludes `.env*`).

@@ -32,7 +32,10 @@ export interface IVehicle {
   code: string; // e.g. CAR-AZI-01
   type: string; // Microbus, Coaster, Office Micro
   capacity: number;
-  seatLayout: number[]; // passenger seats per row, front→back, e.g. [2,3,3,4]; empty = derive from capacity
+  seatLayout: number[]; // passenger seats per row, front→back, e.g. [1,3,3,4]; empty = derive from capacity
+  // display arrangement per row, left(door side)→right; "_" = walkway gap,
+  // e.g. ["1","3","1_2","4"] (Hiace: single seat by the aisle + 2-bench)
+  seatArrangement: string[];
   providerId: Types.ObjectId;
   driverName?: string;
   driverPhone?: string;
@@ -44,6 +47,7 @@ const VehicleSchema = new Schema<IVehicle>({
   type: { type: String, required: true },
   capacity: { type: Number, required: true, min: 1 },
   seatLayout: { type: [Number], default: [] },
+  seatArrangement: { type: [String], default: [] },
   providerId: { type: Schema.Types.ObjectId, ref: "Provider", required: true },
   driverName: String,
   driverPhone: String,

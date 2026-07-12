@@ -482,6 +482,7 @@ function TripPanel({
               seatPlan={plan.seatPlan}
               capacity={plan.vehicle?.capacity ?? 0}
               layout={plan.vehicle?.seatLayout}
+              arrangement={plan.vehicle?.seatArrangement}
             />
           </div>
         </section>

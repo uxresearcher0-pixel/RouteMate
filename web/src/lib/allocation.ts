@@ -43,6 +43,7 @@ export interface TripInput {
     code: string;
     capacity: number;
     seatLayout?: number[];
+    seatArrangement?: string[]; // display-only floor plan (walkway gaps)
     driverName?: string;
     driverPhone?: string;
   } | null;

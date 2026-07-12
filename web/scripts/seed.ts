@@ -41,14 +41,18 @@ async function main() {
     { name: "Office Owned" },
   ]);
 
-  /* vehicles — capacity = PASSENGER seats (driver excluded) */
+  /* vehicles — capacity = PASSENGER seats (driver excluded).
+     seatArrangement = floor plan per row, left(door side)→right, "_" = walkway:
+     Hiace 12-seated: P1|Driver / bench 3 / single_bench2 (walkthrough) / bench 4 */
+  const hiace12 = { seatLayout: [1, 3, 3, 4], seatArrangement: ["1", "3", "1_2", "4"] };
+  const hiace10 = { seatLayout: [1, 3, 2, 3], seatArrangement: ["1", "3", "2", "3"] };
   const [carAzi, carPan, carNar, carOff, , carJat] = await Vehicle.insertMany([
-    { code: "CAR-AZI-01", type: "Hiace 12-seated", capacity: 11, seatLayout: [1, 3, 3, 4], providerId: provA._id, driverName: "Rahim", driverPhone: "01711111111" },
-    { code: "CAR-PAN-01", type: "Hiace 10-seated", capacity: 9, seatLayout: [1, 3, 2, 3], providerId: provB._id, driverName: "Karim", driverPhone: "01722222222" },
-    { code: "CAR-NAR-01", type: "Hiace 12-seated", capacity: 11, seatLayout: [1, 3, 3, 4], providerId: provC._id, driverName: "Salam", driverPhone: "01733333333" },
-    { code: "CAR-OFF-01", type: "Office Micro", capacity: 10, seatLayout: [1, 3, 3, 3], providerId: office._id, driverName: "Jamal", driverPhone: "01744444444" },
-    { code: "COACH-01", type: "Office Coaster", capacity: 25, seatLayout: [4, 4, 4, 4, 4, 5], providerId: office._id, driverName: "Belal", driverPhone: "01755555555" },
-    { code: "CAR-JAT-01", type: "Hiace 12-seated", capacity: 11, seatLayout: [1, 3, 3, 4], providerId: provB._id, driverName: "Motin", driverPhone: "01766666666" },
+    { code: "CAR-AZI-01", type: "Hiace 12-seated", capacity: 11, ...hiace12, providerId: provA._id, driverName: "Rahim", driverPhone: "01711111111" },
+    { code: "CAR-PAN-01", type: "Hiace 10-seated", capacity: 9, ...hiace10, providerId: provB._id, driverName: "Karim", driverPhone: "01722222222" },
+    { code: "CAR-NAR-01", type: "Hiace 12-seated", capacity: 11, ...hiace12, providerId: provC._id, driverName: "Salam", driverPhone: "01733333333" },
+    { code: "CAR-OFF-01", type: "Office Micro", capacity: 10, seatLayout: [1, 3, 3, 3], seatArrangement: ["1", "3", "1_2", "3"], providerId: office._id, driverName: "Jamal", driverPhone: "01744444444" },
+    { code: "COACH-01", type: "Office Coaster", capacity: 25, seatLayout: [4, 4, 4, 4, 4, 5], seatArrangement: ["2_2", "2_2", "2_2", "2_2", "2_2", "5"], providerId: office._id, driverName: "Belal", driverPhone: "01755555555" },
+    { code: "CAR-JAT-01", type: "Hiace 12-seated", capacity: 11, ...hiace12, providerId: provB._id, driverName: "Motin", driverPhone: "01766666666" },
   ]);
 
   /* employees — every passenger has a contact number */

@@ -206,6 +206,9 @@ export async function computeTripPlan(
           code: vehicle.code,
           capacity: vehicle.capacity,
           seatLayout: vehicle.seatLayout?.length ? vehicle.seatLayout : undefined,
+          seatArrangement: vehicle.seatArrangement?.length
+            ? vehicle.seatArrangement
+            : undefined,
           driverName: vehicle.driverName,
           driverPhone: vehicle.driverPhone,
         }

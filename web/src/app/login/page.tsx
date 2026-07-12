@@ -14,7 +14,15 @@ const ROLE_META = {
   EMPLOYEE: { label: "Employee", icon: User, color: "slate" as const },
 };
 
-function UserGroup({ title, users }: { title: string; users: IEmployee[] }) {
+function UserGroup({
+  title,
+  users,
+  needsCode,
+}: {
+  title: string;
+  users: IEmployee[];
+  needsCode: boolean;
+}) {
   if (users.length === 0) return null;
   return (
     <div>
@@ -26,8 +34,17 @@ function UserGroup({ title, users }: { title: string; users: IEmployee[] }) {
           const meta = ROLE_META[u.role];
           return (
             <li key={String(u._id)}>
-              <form action={login}>
+              <form action={login} className="flex items-center gap-1.5">
                 <input type="hidden" name="employeeId" value={String(u._id)} />
+                {needsCode && (
+                  <input
+                    type="password"
+                    name="accessCode"
+                    required
+                    placeholder="Access code"
+                    className="w-28 shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-xs outline-none focus:border-indigo-400"
+                  />
+                )}
                 <button
                   type="submit"
                   className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-indigo-300 hover:bg-indigo-50/40"
@@ -60,6 +77,7 @@ export default async function LoginPage() {
   const admins = employees.filter((e) => e.role === "ADMIN");
   const managers = employees.filter((e) => e.role === "ROUTE_MANAGER");
   const staff = employees.filter((e) => e.role === "EMPLOYEE").slice(0, 6);
+  const needsCode = Boolean(process.env.ACCESS_CODE);
 
   return (
     <div className="mx-auto max-w-md">
@@ -74,13 +92,15 @@ export default async function LoginPage() {
       </div>
 
       <Card className="mt-6 space-y-5 p-5">
-        <UserGroup title="Admin" users={admins} />
-        <UserGroup title="Route Managers" users={managers} />
-        <UserGroup title="Employees (sample)" users={staff} />
+        <UserGroup title="Admin" users={admins} needsCode={needsCode} />
+        <UserGroup title="Route Managers" users={managers} needsCode={needsCode} />
+        <UserGroup title="Employees (sample)" users={staff} needsCode={needsCode} />
       </Card>
 
       <p className="mt-4 text-center text-xs text-slate-400">
-        Demo sign-in — password/SSO authentication arrives with production rollout.
+        {needsCode
+          ? "Enter the access code shared by the transport admin."
+          : "Demo sign-in — password/SSO authentication arrives with production rollout."}
       </p>
     </div>
   );

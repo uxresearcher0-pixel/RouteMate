@@ -16,6 +16,11 @@ import { canManageRoute, getCurrentUser, isAdmin, SESSION_COOKIE } from "@/lib/a
 /* ---------------------------------------------------------- session */
 
 export async function login(formData: FormData): Promise<void> {
+  // shared access code gate for public deployments (set ACCESS_CODE in the
+  // host's env; when unset — e.g. local dev — sign-in stays open)
+  const required = process.env.ACCESS_CODE;
+  if (required && String(formData.get("accessCode") ?? "") !== required) return;
+
   const employeeId = String(formData.get("employeeId"));
   await dbConnect();
   if (!Types.ObjectId.isValid(employeeId)) return;

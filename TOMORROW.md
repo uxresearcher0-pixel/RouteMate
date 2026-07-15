@@ -1,6 +1,19 @@
-# Status (updated 2026-07-15 — paused; next: seat map v3 with accurate seat icons)
+# Status (updated 2026-07-18 — seat map v3 shipped)
 
-## NEXT UP — Seat map v3: accurate top-view seat icons (user request, paused here)
+## DONE — Seat map v3: accurate seat icons (completed 2026-07-18)
+
+Both seat maps (web + mobile) now draw every seat with the real bucket-seat
+glyph traced from the Vecteezy asset — headrest, backrest with inner panel,
+cushion — tinted by passenger type, inside a vehicle-body outline with a
+windshield hint. Walkway/door semantics, P-numbering, and the allocation
+logic are unchanged. Deployed to production.
+
+Left open (needs user input): if the exact per-seat x/y positions from the
+three Hiace diagrams matter beyond row strings (e.g. the third diagram's
+shifted middle column), extend `seatArrangement` to coordinates — confirm
+whether the two diagram variants are different vehicles.
+
+## Original request notes — Seat map v3 (user, 2026-07-15)
 
 The user provided three top-view Hiace floor-plan diagrams (front at LEFT,
 individual bucket seats drawn with seat back + curved armrest) and a vector

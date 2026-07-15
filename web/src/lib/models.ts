@@ -65,6 +65,7 @@ export interface IEmployee {
   frontSeatPriority: boolean; // women / sick / medical front-seat priority
   phone?: string; // contact number — visible to all passengers
   passwordHash?: string; // bcrypt; excluded from queries unless selected
+  apiToken?: string; // bearer token for the mobile app; excluded unless selected
 }
 
 const EmployeeSchema = new Schema<IEmployee>({
@@ -79,6 +80,7 @@ const EmployeeSchema = new Schema<IEmployee>({
   frontSeatPriority: { type: Boolean, default: false },
   phone: String,
   passwordHash: { type: String, select: false },
+  apiToken: { type: String, select: false, index: true },
 });
 
 /* ------------------------------------------------------------------ Route */

@@ -212,9 +212,23 @@ export function SeatMap({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4">
-      {/* vehicle body outline — front (windshield) at the top */}
-      <div className="mx-auto w-fit rounded-t-[44px] rounded-b-[22px] border border-slate-200 bg-white px-4 pb-4 pt-3">
-        <div className="mx-auto mb-3 h-1.5 w-3/5 rounded-full bg-slate-100" aria-hidden />
+      {/* van body outline — top view, front (windshield) at the top */}
+      <div className="relative mx-auto w-fit px-2.5">
+        {/* side mirrors */}
+        <span
+          aria-hidden
+          className="absolute -left-0 top-10 h-5 w-2.5 rotate-[24deg] rounded-full border border-slate-300 bg-slate-100"
+        />
+        <span
+          aria-hidden
+          className="absolute -right-0 top-10 h-5 w-2.5 -rotate-[24deg] rounded-full border border-slate-300 bg-slate-100"
+        />
+        <div className="rounded-t-[64px] rounded-b-[26px] border-[1.5px] border-slate-300 bg-white px-4 pb-3 pt-2">
+          {/* windshield arc */}
+          <div
+            aria-hidden
+            className="mx-auto mb-3 h-4 w-[82%] rounded-b-[40px] border-b-[1.5px] border-slate-200"
+          />
         <div className="flex w-fit flex-col gap-2">
           {/* front row: P1 window-side left, driver right (right-hand drive) */}
           <div className="flex gap-2">
@@ -247,6 +261,12 @@ export function SeatMap({
               )}
             </div>
           ))}
+          </div>
+          {/* rear window line */}
+          <div
+            aria-hidden
+            className="mx-auto mt-3 h-2 w-[70%] rounded-t-[20px] border-t-[1.5px] border-slate-200"
+          />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap justify-center gap-3 text-[11px] text-slate-500">

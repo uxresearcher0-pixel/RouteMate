@@ -44,8 +44,12 @@ export function SeatMap({
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.wrap}>
-        <View style={styles.body}>
-          <View style={styles.windshield} />
+        <View style={styles.vanWrap}>
+          {/* side mirrors */}
+          <View style={[styles.mirror, styles.mirrorLeft]} />
+          <View style={[styles.mirror, styles.mirrorRight]} />
+          <View style={styles.body}>
+            <View style={styles.windshield} />
           {/* front row: P1 window-side left, driver right */}
           <View style={styles.row}>
             {groups[0].map((l) => (
@@ -63,17 +67,19 @@ export function SeatMap({
             <View style={styles.doorBar} />
             <Text style={styles.doorText}>DOOR · WALKWAY ON THIS SIDE</Text>
           </View>
-          {groups.slice(1).map((g, i) => (
-            <View key={i} style={styles.row}>
-              {rowSlots(g, arrangement?.[i + 1], width, coaster).map((slot, j) =>
-                slot.kind === "seat" ? (
-                  <Seat key={slot.label} label={slot.label} cell={bySeat.get(slot.label)} />
-                ) : (
-                  <View key={`g${j}`} style={styles.blank} />
-                ),
-              )}
-            </View>
-          ))}
+            {groups.slice(1).map((g, i) => (
+              <View key={i} style={styles.row}>
+                {rowSlots(g, arrangement?.[i + 1], width, coaster).map((slot, j) =>
+                  slot.kind === "seat" ? (
+                    <Seat key={slot.label} label={slot.label} cell={bySeat.get(slot.label)} />
+                  ) : (
+                    <View key={`g${j}`} style={styles.blank} />
+                  ),
+                )}
+              </View>
+            ))}
+            <View style={styles.rearWindow} />
+          </View>
         </View>
         <View style={styles.legend}>
           <LegendItem fill={TINT.regular} label="Regular" />
@@ -130,25 +136,52 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 10,
   },
-  body: {
+  vanWrap: { position: "relative", paddingHorizontal: 8 },
+  mirror: {
+    position: "absolute",
+    top: 38,
+    width: 9,
+    height: 20,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: C.border,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderColor: C.inkFaint,
+    backgroundColor: C.chip,
+    zIndex: 1,
+  },
+  mirrorLeft: { left: 0, transform: [{ rotate: "24deg" }] },
+  mirrorRight: { right: 0, transform: [{ rotate: "-24deg" }] },
+  body: {
+    borderWidth: 1.5,
+    borderColor: C.inkFaint,
+    borderTopLeftRadius: 56,
+    borderTopRightRadius: 56,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     paddingHorizontal: 12,
-    paddingBottom: 12,
-    paddingTop: 8,
+    paddingBottom: 10,
+    paddingTop: 6,
     gap: 8,
+    backgroundColor: C.card,
   },
   windshield: {
     alignSelf: "center",
-    width: "55%",
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: C.borderSoft,
+    width: "82%",
+    height: 14,
+    borderBottomWidth: 1.5,
+    borderColor: C.border,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
     marginBottom: 4,
+  },
+  rearWindow: {
+    alignSelf: "center",
+    width: "70%",
+    height: 8,
+    borderTopWidth: 1.5,
+    borderColor: C.border,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: 4,
   },
   row: { flexDirection: "row", gap: 8 },
   cell: { width: CELL, alignItems: "center" },

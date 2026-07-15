@@ -118,13 +118,41 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 /* ---------------------------------------------------------- SeatMap
- * True floor plan driven by the vehicle's row structure + arrangement.
- * Benches pack toward the right (window/driver side); the walkway and
- * sliding door run along the LEFT, exactly like the Hiace diagrams:
+ * True floor plan driven by the vehicle's row structure + arrangement,
+ * drawn with the real seat icon (headrest / backrest / cushion) inside a
+ * vehicle-body outline. Benches pack toward the right (window/driver
+ * side); the walkway and sliding door run along the LEFT, exactly like
+ * the Hiace diagrams:
  *   12-seated: P1|Driver / bench 3 / single+walkthrough+bench 2 / bench 4
  * Arrangement strings are per row, left→right; "_" marks a walkway gap. */
 
-const BLANK_CELL = "h-12 w-16 sm:h-14 sm:w-20";
+const BLANK_CELL = "h-[74px] w-16 sm:w-20";
+
+/** Bucket-seat glyph traced from design-assets/vecteezy car-seat icon:
+ *  headrest + neck posts, backrest with inner panel, wide cushion. */
+export function SeatIcon({ fill, className }: { fill: string; className?: string }) {
+  return (
+    <svg viewBox="0 0 96 104" className={className} aria-hidden>
+      <path
+        d="M33 2h30c6.6 0 11 4.4 11 11v4c0 5.5-4.5 10-10 10H32c-5.5 0-10-4.5-10-10v-4c0-6.6 4.4-11 11-11z"
+        fill={fill}
+      />
+      <rect x="35" y="25" width="7" height="9" fill={fill} />
+      <rect x="54" y="25" width="7" height="9" fill={fill} />
+      <path
+        d="M25 33h46c7.7 0 13 5.3 13 13v29c0 7.7-5.3 13-13 13H25c-7.7 0-13-5.3-13-13V46c0-7.7 5.3-13 13-13z"
+        fill={fill}
+      />
+      <rect x="28" y="41" width="40" height="47" rx="11" fill="none" stroke="#fff" strokeWidth="3.5" />
+      <path
+        d="M13 82h70c5.5 0 9 3.8 9 9.5S88.5 101 83 101H13c-5.5 0-9-3.8-9-9.5S7.5 82 13 82z"
+        fill={fill}
+        stroke="#fff"
+        strokeWidth="3"
+      />
+    </svg>
+  );
+}
 
 /** Parse "1_2" → [1,2]; invalid/missing → null. */
 function parseArrangement(s: string | undefined, expected: number): number[] | null {
@@ -184,57 +212,55 @@ export function SeatMap({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4">
-      <div className="mx-auto flex w-fit flex-col gap-2">
-        {/* front row: P1 window-side left, driver right (right-hand drive) */}
-        <div className="flex gap-2">
-          {groups[0].map((l) => (
-            <Seat key={l} label={l} row={bySeat.get(l)} />
-          ))}
-          {Array.from({ length: Math.max(0, width - groups[0].length - 1) }).map((_, i) => (
-            <div key={i} className={BLANK_CELL} aria-hidden />
-          ))}
-          <div className={`flex ${BLANK_CELL} flex-col items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-400`}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="9" />
-              <circle cx="12" cy="12" r="2.5" />
-              <path d="M12 14.5V21M4 10l5.5 1.5M20 10l-5.5 1.5" />
-            </svg>
-            <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide">Driver</span>
+      {/* vehicle body outline — front (windshield) at the top */}
+      <div className="mx-auto w-fit rounded-t-[44px] rounded-b-[22px] border border-slate-200 bg-white px-4 pb-4 pt-3">
+        <div className="mx-auto mb-3 h-1.5 w-3/5 rounded-full bg-slate-100" aria-hidden />
+        <div className="flex w-fit flex-col gap-2">
+          {/* front row: P1 window-side left, driver right (right-hand drive) */}
+          <div className="flex gap-2">
+            {groups[0].map((l) => (
+              <Seat key={l} label={l} row={bySeat.get(l)} />
+            ))}
+            {Array.from({ length: Math.max(0, width - groups[0].length - 1) }).map((_, i) => (
+              <div key={i} className={BLANK_CELL} aria-hidden />
+            ))}
+            <div className={`flex ${BLANK_CELL} flex-col items-center`}>
+              <SeatIcon fill="#cbd5e1" className="h-10 w-10 sm:h-11 sm:w-11" />
+              <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+                Driver
+              </span>
+            </div>
           </div>
-        </div>
-        {/* sliding door + walkway run along the left side */}
-        <div className="flex items-center gap-1.5 pl-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-500">
-          <span className="h-1 w-10 rounded-full bg-emerald-300" />
-          door · walkway on this side
-        </div>
-        {groups.slice(1).map((g, i) => (
-          <div key={i} className="flex gap-2">
-            {rowSlots(g, arrangement?.[i + 1], width, coaster).map((slot, j) =>
-              slot.kind === "seat" ? (
-                <Seat key={slot.label} label={slot.label} row={bySeat.get(slot.label)} />
-              ) : (
-                <div
-                  key={`gap-${j}`}
-                  aria-hidden
-                  className={`${BLANK_CELL} rounded-2xl border border-dashed border-slate-100`}
-                />
-              ),
-            )}
+          {/* sliding door + walkway run along the left side */}
+          <div className="flex items-center gap-1.5 pl-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-500">
+            <span className="h-1 w-10 rounded-full bg-emerald-300" />
+            door · walkway on this side
           </div>
-        ))}
+          {groups.slice(1).map((g, i) => (
+            <div key={i} className="flex gap-2">
+              {rowSlots(g, arrangement?.[i + 1], width, coaster).map((slot, j) =>
+                slot.kind === "seat" ? (
+                  <Seat key={slot.label} label={slot.label} row={bySeat.get(slot.label)} />
+                ) : (
+                  <div key={`gap-${j}`} aria-hidden className={BLANK_CELL} />
+                ),
+              )}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap justify-center gap-3 text-[11px] text-slate-500">
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-slate-300" /> Regular
+          <SeatIcon fill="#94a3b8" className="h-3.5 w-3.5" /> Regular
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-slate-900" /> Guest
+          <SeatIcon fill="#0f172a" className="h-3.5 w-3.5" /> Guest
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-rose-400" /> Safety priority
+          <SeatIcon fill="#fb7185" className="h-3.5 w-3.5" /> Safety priority
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-md border-2 border-dashed border-emerald-300 bg-emerald-50" /> Open seat
+          <SeatIcon fill="#a7f3d0" className="h-3.5 w-3.5" /> Open seat
         </span>
       </div>
     </div>
@@ -246,30 +272,28 @@ function Seat({ label, row }: { label: string; row?: SeatRow }) {
     return (
       <div
         title={`${label} — empty seat, open for booking`}
-        className="flex h-12 w-16 flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-300 bg-white text-emerald-600 sm:h-14 sm:w-20"
+        className={`flex ${BLANK_CELL} flex-col items-center`}
       >
-        <span className="text-[10px] font-bold">{label}</span>
-        <span className="text-[9px]">open</span>
+        <SeatIcon fill="#a7f3d0" className="h-10 w-10 sm:h-11 sm:w-11" />
+        <span className="text-[9px] font-bold leading-tight text-emerald-600">
+          {label} · open
+        </span>
       </div>
     );
   }
   const safety = row.reason.includes("Safety");
-  const dot = safety
-    ? "bg-rose-400"
-    : row.ptype === "Regular"
-      ? "bg-slate-300"
-      : "bg-slate-900";
+  const fill = safety ? "#fb7185" : row.ptype === "Regular" ? "#94a3b8" : "#0f172a";
   return (
     <div
       title={`${label} · ${row.name} · ${row.reason}`}
-      className="relative flex h-12 w-16 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-1 text-slate-800 sm:h-14 sm:w-20"
+      className={`flex ${BLANK_CELL} flex-col items-center`}
     >
-      <span className={`absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
-      <span className="w-full truncate text-center text-[11px] font-semibold sm:text-xs">
+      <SeatIcon fill={fill} className="h-10 w-10 sm:h-11 sm:w-11" />
+      <span className="w-full truncate text-center text-[10px] font-semibold leading-tight text-slate-800">
         {row.name}
       </span>
-      <span className="w-full truncate text-center text-[8px] text-slate-400 sm:text-[9px]">
-        {label} · {row.reason.replace("Drop order: ", "").replace("Boards at ", "").replace("Safety priority (rows behind driver)", "priority").replace("Safety priority (front seat)", "priority")}
+      <span className="w-full truncate text-center text-[8px] leading-tight text-slate-400">
+        {label}
       </span>
     </div>
   );

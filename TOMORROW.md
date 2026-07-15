@@ -1,4 +1,33 @@
-# Status (updated 2026-07-12 — operations features complete)
+# Status (updated 2026-07-15 — paused; next: seat map v3 with accurate seat icons)
+
+## NEXT UP — Seat map v3: accurate top-view seat icons (user request, paused here)
+
+The user provided three top-view Hiace floor-plan diagrams (front at LEFT,
+individual bucket seats drawn with seat back + curved armrest) and a vector
+seat icon to use "with accuracy":
+
+- Asset: `design-assets/vecteezy_car-seat-icon-vector-illustration_27568771-0.eps`
+  (+ JPG preview + Vecteezy license PDF, copied from Downloads 2026-07-15)
+- The diagrams show individual seats (not benches) with realistic spacing,
+  center walkway, and slightly different middle-row arrangements between
+  variants — first two diagrams identical, third has the middle single-seat
+  column shifted (likely two real seat-position variants of the same Hiace).
+
+### Implementation sketch
+1. Convert the EPS to clean SVG (Ghostscript/Inkscape, or trace the JPG);
+   produce a small top-view seat glyph (rotatable, tintable) for web
+   (inline SVG component) and mobile (react-native-svg).
+2. Seat map v3 (web `components/ui.tsx` SeatMap + mobile
+   `components/seat-map.tsx`): render each seat as the icon positioned per
+   the diagrams — individual seats with gaps, walkway, driver seat icon,
+   vehicle outline (rounded body shape like the diagrams) — replacing the
+   rounded-rectangle cells. Keep P-numbering, type dots/tints (regular/
+   guest/priority/open), and the door-side walkway semantics.
+3. Possibly extend `seatArrangement` to full per-seat x/y positions per
+   vehicle variant if row strings can't express the diagrams accurately.
+4. Verify against the three provided diagrams seat-for-seat.
+
+## Previous status (2026-07-12 — operations features complete)
 
 ## Latest batch (2026-07-12)
 

@@ -1,4 +1,29 @@
-# Status (updated 2026-07-18 — seat map v3 shipped)
+# Status (updated 2026-07-15 late — mobile app verified on iOS simulator; paused)
+
+## Where we stopped
+
+Mobile app fully verified end-to-end on the iPhone 17 Pro simulator against
+the PRODUCTION API: login (E999) → home with live open-seat counts → route
+screen showing the van-silhouette seat map with real seat icons, priority
+zone (rose), open seats (emerald), tap-to-call driver, cutoff lock, guest
+request chips. Relaunch anytime: `cd mobile && npx expo start --ios`; if
+Expo Go says "request timed out", run
+`xcrun simctl openurl booted "exp://127.0.0.1:8081"`.
+
+## Next session options (user to pick)
+
+1. **Native Xcode build** — `npx expo run:ios` (generates ios/ project,
+   ~10 min first build) for a real .xcworkspace + home-screen app.
+2. **EAS builds for real devices** — `npx eas-cli build --platform ios
+   --profile preview` on @shahriaruxs-team (Apple credentials prompt on
+   first run; needs the user).
+3. **Manager actions in mobile** — approve guests, publish plan, resolve
+   late notices, report driver delay (currently web-only; API endpoints
+   need adding like /api/attendance).
+4. Remaining Phase 3 backlog: notifications, HRM API, corridor editing UI,
+   edit/deactivate CRUD, coaster-shaped body for COACH-01.
+
+# Previous status (2026-07-18 note — seat map v3 shipped)
 
 ## DONE — Seat map v3: accurate seat icons (completed 2026-07-18)
 

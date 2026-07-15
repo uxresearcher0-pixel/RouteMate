@@ -20,7 +20,7 @@ export function TripTabs({
         {/* sliding highlight */}
         <span
           className={`absolute inset-y-1 w-[calc(50%-4px)] rounded-full transition-transform duration-300 ease-out ${
-            tab === "m" ? "translate-x-0 bg-amber-100" : "translate-x-full bg-indigo-100"
+            tab === "m" ? "translate-x-0 bg-slate-100" : "translate-x-full bg-slate-100"
           }`}
           aria-hidden
         />
@@ -28,7 +28,7 @@ export function TripTabs({
           type="button"
           onClick={() => setTab("m")}
           className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200 ${
-            tab === "m" ? "text-amber-800" : "text-slate-400"
+            tab === "m" ? "text-slate-900" : "text-slate-400"
           }`}
         >
           <Sunrise size={14} />
@@ -38,7 +38,7 @@ export function TripTabs({
           type="button"
           onClick={() => setTab("e")}
           className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200 ${
-            tab === "e" ? "text-indigo-800" : "text-slate-400"
+            tab === "e" ? "text-slate-900" : "text-slate-400"
           }`}
         >
           <Sunset size={14} />

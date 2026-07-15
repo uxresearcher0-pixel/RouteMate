@@ -32,13 +32,13 @@ function navLinks(user: NonNullable<NavUser>) {
 export function TopNav({ user }: { user: NavUser }) {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/80">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-5 px-4">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-900/40">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white">
             <Bus size={16} strokeWidth={2.2} />
           </span>
-          <span className="text-sm font-bold tracking-tight text-white">
+          <span className="text-sm font-bold tracking-tight text-slate-900">
             RouteMate
           </span>
         </Link>
@@ -55,8 +55,8 @@ export function TopNav({ user }: { user: NavUser }) {
                   href={href}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
                     active
-                      ? "bg-white/10 text-white"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white"
+                      ? "bg-slate-100 text-slate-900"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon size={14} />
@@ -71,7 +71,7 @@ export function TopNav({ user }: { user: NavUser }) {
           {user ? (
             <>
               <span className="text-right">
-                <span className="block text-xs font-semibold text-white">{user.name}</span>
+                <span className="block text-xs font-semibold text-slate-900">{user.name}</span>
                 <span className="block text-[10px] text-slate-400">
                   {ROLE_LABEL[user.role] ?? user.role}
                 </span>
@@ -80,7 +80,7 @@ export function TopNav({ user }: { user: NavUser }) {
                 <button
                   type="submit"
                   title="Sign out"
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
                 >
                   <LogOut size={15} />
                 </button>
@@ -109,12 +109,12 @@ export function BottomNav({ user }: { user: NavUser }) {
               key={label}
               href={href}
               className={`flex min-w-16 flex-col items-center gap-0.5 px-3 py-2 text-[10px] font-semibold transition ${
-                active ? "text-indigo-600" : "text-slate-400 active:text-slate-600"
+                active ? "text-slate-900" : "text-slate-400 active:text-slate-600"
               }`}
             >
               <span
                 className={`flex h-7 w-12 items-center justify-center rounded-full transition ${
-                  active ? "bg-indigo-50" : ""
+                  active ? "bg-slate-100" : ""
                 }`}
               >
                 <Icon size={18} strokeWidth={active ? 2.4 : 2} />

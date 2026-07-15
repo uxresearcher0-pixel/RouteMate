@@ -66,7 +66,7 @@ export default async function PersonPage({
     <div className="mx-auto max-w-md">
       <Link
         href={route ? `/routes/${route.code}` : "/"}
-        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-indigo-600"
+        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900"
       >
         <ArrowLeft size={14} />
         Back
@@ -102,7 +102,7 @@ export default async function PersonPage({
           <div className="flex items-center gap-2.5">
             <Phone size={15} className="shrink-0 text-slate-400" />
             {person.phone ? (
-              <a href={`tel:${person.phone}`} className="font-medium text-indigo-600">
+              <a href={`tel:${person.phone}`} className="font-medium text-slate-900">
                 {person.phone}
               </a>
             ) : (
@@ -112,7 +112,7 @@ export default async function PersonPage({
           <div className="flex items-center gap-2.5">
             <Bus size={15} className="shrink-0 text-slate-400" />
             {route ? (
-              <Link href={`/routes/${route.code}`} className="font-medium text-indigo-600">
+              <Link href={`/routes/${route.code}`} className="font-medium text-slate-900">
                 {route.name} <span className="text-xs text-slate-400">{route.code}</span>
               </Link>
             ) : managedRoute ? (
@@ -120,7 +120,7 @@ export default async function PersonPage({
                 Manages{" "}
                 <Link
                   href={`/routes/${managedRoute.code}`}
-                  className="font-medium text-indigo-600"
+                  className="font-medium text-slate-900"
                 >
                   {managedRoute.name}
                 </Link>
@@ -135,10 +135,10 @@ export default async function PersonPage({
               <span>
                 <span className="font-medium">{stop.name}</span>
                 {stop.morningTime && (
-                  <span className="ml-1.5 text-xs text-amber-600">↑{stop.morningTime}</span>
+                  <span className="ml-1.5 text-xs text-slate-500">↑{stop.morningTime}</span>
                 )}
                 {stop.eveningTime && (
-                  <span className="ml-1.5 text-xs text-indigo-500">↓{stop.eveningTime}</span>
+                  <span className="ml-1.5 text-xs text-slate-400">↓{stop.eveningTime}</span>
                 )}
               </span>
             </div>
@@ -152,8 +152,8 @@ export default async function PersonPage({
           <div className="mt-3 space-y-2.5">
             {(
               [
-                ["MORNING_PICKUP", "Morning pickup", <Sunrise key="m" size={14} className="text-amber-500" />],
-                ["EVENING_DROPOFF", "Evening drop-off", <Sunset key="e" size={14} className="text-indigo-500" />],
+                ["MORNING_PICKUP", "Morning pickup", <Sunrise key="m" size={14} className="text-slate-400" />],
+                ["EVENING_DROPOFF", "Evening drop-off", <Sunset key="e" size={14} className="text-slate-400" />],
               ] as const
             ).map(([tripType, label, icon]) => {
               const s = STATUS_BADGE[statusFor(tripType)];
@@ -200,7 +200,7 @@ export default async function PersonPage({
               required
               autoComplete="current-password"
               placeholder="Current password"
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
             />
             <input
               type="password"
@@ -209,11 +209,11 @@ export default async function PersonPage({
               minLength={6}
               autoComplete="new-password"
               placeholder="New password (min 6 characters)"
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
             />
             <button
               type="submit"
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
             >
               Update password
             </button>

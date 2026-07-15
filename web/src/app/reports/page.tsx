@@ -112,14 +112,14 @@ export default async function ReportsPage({
             type="date"
             name="from"
             defaultValue={from}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-400"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-slate-400"
           />
           <span className="text-slate-400">→</span>
           <input
             type="date"
             name="to"
             defaultValue={to}
-            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-400"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-slate-400"
           />
           <button
             type="submit"
@@ -149,7 +149,7 @@ export default async function ReportsPage({
 
       <Card className="mt-6 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-          <BarChart3 size={16} className="text-indigo-500" />
+          <BarChart3 size={16} className="text-slate-400" />
           <h2 className="font-bold tracking-tight">
             Per route · {from} → {to}
           </h2>
@@ -180,12 +180,12 @@ export default async function ReportsPage({
                     <td className={`${TD} font-semibold`}>{r.routeCode}</td>
                     <td className={TD}>
                       {r.tripType === "MORNING_PICKUP" ? (
-                        <Badge color="amber">
+                        <Badge color="slate">
                           <Sunrise size={11} />
                           morning
                         </Badge>
                       ) : (
-                        <Badge color="purple">
+                        <Badge color="slate">
                           <Sunset size={11} />
                           evening
                         </Badge>

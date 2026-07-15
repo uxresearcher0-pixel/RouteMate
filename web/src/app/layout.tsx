@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#020617",
+  themeColor: "#ffffff",
 };
 
 export default async function RootLayout({
@@ -48,7 +48,7 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-100/70 text-slate-900">
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         <TopNav user={navUser} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-5 sm:pt-8 md:pb-8">
           <div className="animate-fade-in-up">{children}</div>

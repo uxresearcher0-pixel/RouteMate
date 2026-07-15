@@ -28,7 +28,7 @@ function MyTripCard({
     {
       tripType: "MORNING_PICKUP" as TripType,
       label: "Morning",
-      icon: <Sunrise size={14} className="text-amber-500" />,
+      icon: <Sunrise size={14} className="text-slate-400" />,
       hint: myStop
         ? `${myStop.morningTime ? `pickup ~${myStop.morningTime} · ` : "pickup · "}${myStop.name}`
         : undefined,
@@ -37,7 +37,7 @@ function MyTripCard({
     {
       tripType: "EVENING_DROPOFF" as TripType,
       label: "Evening",
-      icon: <Sunset size={14} className="text-indigo-500" />,
+      icon: <Sunset size={14} className="text-slate-400" />,
       hint: myStop
         ? `${myStop.eveningTime ? `drop ~${myStop.eveningTime} · ` : "drop · "}${myStop.name}`
         : undefined,
@@ -46,11 +46,11 @@ function MyTripCard({
   ];
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-slate-100 bg-gradient-to-r from-indigo-50/80 to-white px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
         <h2 className="font-bold tracking-tight">My trip today</h2>
         <Link
           href={`/routes/${route.code}`}
-          className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-indigo-600"
+          className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-slate-900"
         >
           {route.code}
           <ArrowRight size={12} />
@@ -182,7 +182,7 @@ export default async function Home() {
 
       <section>
         <div className="flex items-center gap-2">
-          <Armchair size={16} className="text-emerald-500" />
+          <Armchair size={16} className="text-slate-400" />
           <h2 className="font-bold tracking-tight">Open seats today</h2>
         </div>
         <p className="mt-0.5 text-xs text-slate-400">
@@ -191,7 +191,7 @@ export default async function Home() {
         </p>
         <div className="mt-3 grid gap-3 xl:grid-cols-2">
           {cards.map(({ route, m, e }) => (
-            <Card key={route.code} className="p-4 transition hover:shadow-md">
+            <Card key={route.code} className="p-4 transition-colors hover:border-slate-300">
               <div className="flex items-center gap-2">
                 <span className="min-w-0 truncate font-bold tracking-tight">
                   {route.name}
@@ -205,18 +205,18 @@ export default async function Home() {
               <div className="mt-3 flex gap-3">
                 <OpenSeatsRow
                   label="Morning"
-                  icon={<Sunrise size={12} className="text-amber-500" />}
+                  icon={<Sunrise size={12} className="text-slate-400" />}
                   plan={m.plan}
                 />
                 <OpenSeatsRow
                   label="Evening"
-                  icon={<Sunset size={12} className="text-indigo-500" />}
+                  icon={<Sunset size={12} className="text-slate-400" />}
                   plan={e.plan}
                 />
               </div>
               <Link
                 href={`/routes/${route.code}`}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
               >
                 Request a seat
                 <ArrowRight size={14} />

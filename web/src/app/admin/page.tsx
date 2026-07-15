@@ -23,14 +23,14 @@ export const dynamic = "force-dynamic";
 const TH = "px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400";
 const TD = "px-4 py-2.5 text-sm";
 const INPUT =
-  "rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+  "rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100";
 const SUBMIT =
-  "inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700";
+  "inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700";
 
 function CardHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-      <span className="text-indigo-500">{icon}</span>
+      <span className="text-slate-400">{icon}</span>
       <h2 className="font-bold tracking-tight">{title}</h2>
     </div>
   );
@@ -89,7 +89,7 @@ export default async function AdminPage() {
 
       <Card className="mt-6 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-          <Activity size={16} className="text-indigo-500" />
+          <Activity size={16} className="text-slate-400" />
           <h2 className="font-bold tracking-tight">Operations Monitor · {date}</h2>
           <form action={toggleHrmLeaveSync} className="ml-auto">
             <button
@@ -214,7 +214,7 @@ export default async function AdminPage() {
               <input type="date" name="dateTo" defaultValue={date} className={`${INPUT} text-xs`} />
               <button
                 type="submit"
-                className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                className="rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
               >
                 Add leave
               </button>
@@ -389,7 +389,7 @@ export default async function AdminPage() {
               <option value="ADMIN">Admin</option>
             </select>
             <label className="flex items-center gap-1.5 text-xs text-slate-600">
-              <input type="checkbox" name="frontSeatPriority" className="accent-indigo-600" />
+              <input type="checkbox" name="frontSeatPriority" className="accent-slate-900" />
               Front seat
             </label>
             <button type="submit" className={SUBMIT}>

@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/pending";
 export const dynamic = "force-dynamic";
 
 const INPUT =
-  "w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100";
 
 export default async function LoginPage({
   searchParams,
@@ -22,7 +22,7 @@ export default async function LoginPage({
   return (
     <div className="mx-auto max-w-sm">
       <div className="flex flex-col items-center pt-8 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-xl shadow-indigo-200">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white">
           <Bus size={26} />
         </span>
         <h1 className="mt-4 text-2xl font-bold tracking-tight">RouteMate</h1>
@@ -76,7 +76,7 @@ export default async function LoginPage({
               />
             </span>
           </label>
-          <SubmitButton className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+          <SubmitButton className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-700">
             Sign in
           </SubmitButton>
         </form>

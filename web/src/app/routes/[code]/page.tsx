@@ -25,7 +25,7 @@ import { SubmitButton } from "@/components/pending";
 export const dynamic = "force-dynamic";
 
 const INPUT_CLS =
-  "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+  "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100";
 
 type EmpInfo = { name: string; empCode: string; phone?: string };
 
@@ -60,14 +60,14 @@ function AttendanceList({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/people/${emp.empCode}`}
-                className="text-sm font-medium hover:text-indigo-600"
+                className="text-sm font-medium hover:text-slate-900"
               >
                 {emp.name}
               </Link>
               {id === currentUserId && <Badge color="blue">you</Badge>}
               <div className="text-[11px] text-slate-400">
                 {emp.phone ? (
-                  <a href={`tel:${emp.phone}`} className="hover:text-indigo-600">
+                  <a href={`tel:${emp.phone}`} className="hover:text-slate-900">
                     {emp.phone}
                   </a>
                 ) : (
@@ -133,7 +133,7 @@ function LateSection({
             const emp = namesById.get(n.employeeId);
             return (
               <li key={n.id} className="flex items-center gap-2 py-2 text-sm">
-                <Timer size={14} className="shrink-0 text-amber-500" />
+                <Timer size={14} className="shrink-0 text-slate-400" />
                 <span className="min-w-0 flex-1 truncate">
                   <span className="font-medium">{emp?.name ?? "Unknown"}</span>
                   <span className="text-slate-500"> · ~{n.minutes} min late</span>
@@ -222,7 +222,7 @@ function GuestList({
                 {g.phone && (
                   <>
                     {" · "}
-                    <a href={`tel:${g.phone}`} className="hover:text-indigo-600">
+                    <a href={`tel:${g.phone}`} className="hover:text-slate-900">
                       {g.phone}
                     </a>
                   </>
@@ -246,8 +246,8 @@ function GuestList({
                     title="Route manager approval (adds score / allows off-route points)"
                     className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                       g.managerApproved
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "border border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-600"
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "border border-slate-200 text-slate-400 hover:border-slate-400 hover:text-slate-900"
                     }`}
                   >
                     {g.managerApproved ? "Approved ✓" : "Approve"}
@@ -282,8 +282,8 @@ function GuestForm({
   stopInfos: StopInfo[];
 }) {
   return (
-    <details className="group mt-1 rounded-xl border border-dashed border-slate-200 open:border-solid open:border-indigo-200 open:bg-indigo-50/30">
-      <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-sm font-semibold text-indigo-600 marker:content-none">
+    <details className="group mt-1 rounded-xl border border-dashed border-slate-200 open:border-solid open:border-slate-200 open:bg-slate-50/60">
+      <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-sm font-semibold text-slate-900 marker:content-none">
         <UserPlus size={14} />
         Add guest request
         <ChevronDown size={14} className="ml-auto transition group-open:rotate-180" />
@@ -311,12 +311,12 @@ function GuestForm({
           })}
         </select>
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
-          <input type="checkbox" name="emergency" className="accent-indigo-600" /> Emergency
+          <input type="checkbox" name="emergency" className="accent-slate-900" /> Emergency
         </label>
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
-          <input type="checkbox" name="frontSeatPriority" className="accent-indigo-600" /> Front-seat priority
+          <input type="checkbox" name="frontSeatPriority" className="accent-slate-900" /> Front-seat priority
         </label>
-        <SubmitButton className="col-span-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+        <SubmitButton className="col-span-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700">
           Submit for {tripType === "MORNING_PICKUP" ? "morning pickup" : "evening drop-off"}
         </SubmitButton>
       </form>
@@ -327,13 +327,12 @@ function GuestForm({
 type DelayInfo = { id: string; minutes: number; note?: string; reportedBy: string };
 
 function TripPanel({
-  label, icon, accent, routeCode, date, tripType, trip, plan, cutoff, afterCutoff,
+  label, icon, routeCode, date, tripType, trip, plan, cutoff, afterCutoff,
   startsAt, leaveIds, lateNotices, driverDelays, namesById, stopInfos,
   currentUserId, canManage, isRegular,
 }: {
   label: string;
   icon: React.ReactNode;
-  accent: string;
   routeCode: string;
   date: string;
   tripType: TripType;
@@ -357,7 +356,7 @@ function TripPanel({
     published && JSON.stringify(published.seatPlan) !== JSON.stringify(plan.seatPlan);
   return (
     <Card className="overflow-hidden">
-      <div className={`flex items-center gap-2 border-b border-slate-100 bg-gradient-to-r px-5 py-3.5 ${accent}`}>
+      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5">
         {icon}
         <h2 className="font-bold tracking-tight">{label}</h2>
         {startsAt && <Badge color="slate">starts ~{startsAt}</Badge>}
@@ -387,7 +386,7 @@ function TripPanel({
               {plan.vehicle.driverPhone && (
                 <a
                   href={`tel:${plan.vehicle.driverPhone}`}
-                  className="inline-flex items-center gap-0.5 font-medium text-indigo-600"
+                  className="inline-flex items-center gap-0.5 font-medium text-slate-900"
                 >
                   <Phone size={11} />
                   {plan.vehicle.driverPhone}
@@ -616,7 +615,7 @@ export default async function RouteCard({
     <div>
       <Link
         href="/"
-        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-indigo-600"
+        className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900"
       >
         <ArrowLeft size={14} />
         Dashboard
@@ -637,7 +636,7 @@ export default async function RouteCard({
               type="date"
               name="date"
               defaultValue={date}
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-indigo-400"
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-slate-400"
             />
             <button
               type="submit"
@@ -668,12 +667,12 @@ export default async function RouteCard({
                 <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
                   {s.name}
                   {s.morningTime && (
-                    <span className="ml-1 font-normal text-amber-600">
+                    <span className="ml-1 font-normal text-slate-400">
                       ↑{s.morningTime}
                     </span>
                   )}
                   {s.eveningTime && (
-                    <span className="ml-1 font-normal text-indigo-500">
+                    <span className="ml-1 font-normal text-slate-400">
                       ↓{s.eveningTime}
                     </span>
                   )}
@@ -689,18 +688,18 @@ export default async function RouteCard({
       </details>
 
       {announcements.length > 0 && (
-        <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-sm">
-          <Megaphone size={16} className="mt-0.5 shrink-0 text-indigo-500" />
+        <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+          <Megaphone size={16} className="mt-0.5 shrink-0 text-slate-400" />
           <div className="min-w-0 flex-1">
-            <div className="font-semibold text-indigo-900">{announcements[0].title}</div>
-            <div className="mt-0.5 text-indigo-800/80">{announcements[0].body}</div>
+            <div className="font-semibold text-slate-900">{announcements[0].title}</div>
+            <div className="mt-0.5 text-slate-600">{announcements[0].body}</div>
           </div>
         </div>
       )}
 
       {canManage && (
         <details className="group mt-3 rounded-2xl border border-dashed border-slate-200 open:border-solid open:bg-white">
-          <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-slate-500 marker:content-none hover:text-indigo-600">
+          <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-slate-500 marker:content-none hover:text-slate-900">
             <Megaphone size={14} />
             Send announcement to this route
             <ChevronDown size={14} className="ml-auto transition group-open:rotate-180" />
@@ -709,7 +708,7 @@ export default async function RouteCard({
             <input type="hidden" name="routeCode" value={route.code} />
             <input name="title" required placeholder="Title" className={INPUT_CLS} />
             <textarea name="body" required placeholder="Message" rows={2} className={INPUT_CLS} />
-            <SubmitButton className="justify-self-start rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700">
+            <SubmitButton className="justify-self-start rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-700">
               Send
             </SubmitButton>
           </form>
@@ -721,8 +720,7 @@ export default async function RouteCard({
           morning={
             <TripPanel
               label="Morning Pickup"
-              icon={<Sunrise size={17} className="text-amber-600" />}
-              accent="from-amber-50 to-white"
+              icon={<Sunrise size={17} className="text-slate-400" />}
               tripType="MORNING_PICKUP"
               trip={morning.trip}
               plan={morning.plan}
@@ -738,8 +736,7 @@ export default async function RouteCard({
           evening={
             <TripPanel
               label="Evening Drop-off"
-              icon={<Sunset size={17} className="text-indigo-600" />}
-              accent="from-indigo-50 to-white"
+              icon={<Sunset size={17} className="text-slate-400" />}
               tripType="EVENING_DROPOFF"
               trip={evening.trip}
               plan={evening.plan}

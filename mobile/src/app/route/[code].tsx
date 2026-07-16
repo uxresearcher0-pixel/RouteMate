@@ -40,6 +40,33 @@ export default function RouteScreen() {
     setRefreshing(false);
   };
 
+  const [busyOp, setBusyOp] = useState<string | null>(null);
+  const manage = async (
+    op: string,
+    trip: TripDetail,
+    extra: Record<string, unknown> = {},
+  ) => {
+    if (!data || busyOp) return;
+    setBusyOp(op);
+    try {
+      await api("/api/manage", {
+        method: "POST",
+        body: {
+          op,
+          routeCode: data.route.code,
+          date: data.date,
+          tripType: trip.tripType,
+          ...extra,
+        },
+      });
+      await load();
+    } catch (err) {
+      Alert.alert("RouteMate", err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusyOp(null);
+    }
+  };
+
   const requestSeat = async (trip: TripDetail) => {
     if (!data || sending) return;
     const stop = point ?? data.route.stops.find((s) => s.seq > 0)?.name;
@@ -186,6 +213,107 @@ export default function RouteScreen() {
           </View>
         )}
 
+        {/* running late — notices + self report + manager resolve */}
+        {(data.isRegular || data.canManage || trip.lateNotices.length > 0) && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Running late</Text>
+            {trip.lateNotices.length === 0 && (
+              <Text style={styles.meta}>No late notices for this trip.</Text>
+            )}
+            {trip.lateNotices.map((n) => (
+              <View key={n.id} style={styles.personRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.personName}>
+                    {n.name}
+                    {n.isMe ? "  (you)" : ""} · ~{n.minutes} min
+                  </Text>
+                  {n.note ? <Text style={styles.personPhone}>{n.note}</Text> : null}
+                </View>
+                {n.status === "PENDING" && data.canManage ? (
+                  <View style={{ flexDirection: "row", gap: 6 }}>
+                    <Pressable
+                      style={styles.holdBtn}
+                      onPress={() =>
+                        manage("late-resolve", trip, { noticeId: n.id, status: "ACKNOWLEDGED" })
+                      }
+                    >
+                      <Text style={styles.holdText}>Hold</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.rejectBtn}
+                      onPress={() =>
+                        manage("late-resolve", trip, { noticeId: n.id, status: "REJECTED" })
+                      }
+                    >
+                      <Text style={styles.rejectText}>Can&apos;t wait</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.status,
+                      {
+                        color:
+                          n.status === "ACKNOWLEDGED"
+                            ? C.going
+                            : n.status === "REJECTED"
+                              ? C.notGoing
+                              : "#92400e",
+                      },
+                    ]}
+                  >
+                    {n.status.toLowerCase()}
+                  </Text>
+                )}
+              </View>
+            ))}
+            {data.isRegular && !trip.lateNotices.some((n) => n.isMe) && (
+              <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                <Text style={styles.meta}>I&apos;m late:</Text>
+                {[5, 10].map((m) => (
+                  <Pressable
+                    key={m}
+                    style={styles.lateBtn}
+                    onPress={() => manage("late-report", trip, { minutes: m })}
+                  >
+                    <Text style={styles.lateBtnText}>~{m} min</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            <Text style={styles.hint}>
+              Only 5–10 minutes can be held — beyond that the micro must start.
+            </Text>
+          </View>
+        )}
+
+        {/* manager tools: publish + driver delay */}
+        {data.canManage && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Manager tools</Text>
+            <Pressable
+              style={[styles.button, busyOp === "publish" && { opacity: 0.6 }]}
+              onPress={() => manage("publish", trip)}
+            >
+              <Text style={styles.buttonText}>
+                {busyOp === "publish" ? "Publishing…" : "Publish seat plan"}
+              </Text>
+            </Pressable>
+            <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+              <Text style={styles.meta}>Driver late:</Text>
+              {[5, 10, 15].map((m) => (
+                <Pressable
+                  key={m}
+                  style={styles.lateBtn}
+                  onPress={() => manage("driver-delay", trip, { minutes: m })}
+                >
+                  <Text style={styles.lateBtnText}>~{m} min</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* my attendance quick toggle */}
         {me && (
           <View style={[styles.card, styles.rowBetween]}>
@@ -249,6 +377,28 @@ export default function RouteScreen() {
               <Text style={[styles.status, { color: g.seated ? C.going : C.inkSoft }]}>
                 {g.seated ? "seat allocated" : "waitlist"}
               </Text>
+              {data.canManage && (
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  <Pressable
+                    style={[styles.approveBtn, g.managerApproved && styles.approveBtnOn]}
+                    onPress={() =>
+                      manage("guest-approve", trip, { tripId: trip.id, guestId: g.id })
+                    }
+                  >
+                    <Text style={[styles.approveText, g.managerApproved && { color: "#fff" }]}>
+                      {g.managerApproved ? "✓" : "Approve"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.rejectBtn}
+                    onPress={() =>
+                      manage("guest-cancel", trip, { tripId: trip.id, guestId: g.id })
+                    }
+                  >
+                    <Text style={styles.rejectText}>✕</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           ))}
         </View>
@@ -316,4 +466,26 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.borderSoft, marginVertical: 4 },
   stopName: { fontSize: 13, color: C.ink },
   stopTime: { fontSize: 12, color: C.inkSoft },
+  hint: { fontSize: 10, color: C.inkSoft },
+  lateBtn: {
+    borderWidth: 1, borderColor: C.border, borderRadius: radius.full,
+    paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.card,
+  },
+  lateBtnText: { fontSize: 12, fontWeight: "600", color: C.ink },
+  holdBtn: {
+    backgroundColor: C.going, borderRadius: radius.full,
+    paddingHorizontal: 10, paddingVertical: 5,
+  },
+  holdText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  rejectBtn: {
+    borderWidth: 1, borderColor: C.border, borderRadius: radius.full,
+    paddingHorizontal: 10, paddingVertical: 5, backgroundColor: C.card,
+  },
+  rejectText: { fontSize: 11, fontWeight: "600", color: C.inkSoft },
+  approveBtn: {
+    borderWidth: 1, borderColor: C.border, borderRadius: radius.full,
+    paddingHorizontal: 10, paddingVertical: 5, backgroundColor: C.card,
+  },
+  approveBtnOn: { backgroundColor: C.ink, borderColor: C.ink },
+  approveText: { fontSize: 11, fontWeight: "600", color: C.inkMid },
 });

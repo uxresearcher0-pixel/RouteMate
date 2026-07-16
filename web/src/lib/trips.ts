@@ -24,13 +24,18 @@ export type DailyTripDoc = HydratedDocument<IDailyTrip>;
 export type RouteDoc = HydratedDocument<IRoute>;
 export type VehicleDoc = HydratedDocument<IVehicle>;
 
+/** All trip dates/cutoffs are Dhaka wall-clock time (UTC+6, no DST) — fixed
+ *  explicitly so production servers running UTC compute the same results. */
+const DHAKA_UTC_OFFSET = "+06:00";
+
 export function todayStr(): string {
-  // Local date in Dhaka-style YYYY-MM-DD (uses server-local timezone)
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  // Today's date in Asia/Dhaka as YYYY-MM-DD, regardless of server timezone
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dhaka",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 /** A1 — get or create the DailyTrip for (route, date, tripType) with
@@ -138,7 +143,7 @@ export function cutoffInfo(
   } else {
     cutoff = tripType === "MORNING_PICKUP" ? route.morningCutoff : route.eveningCutoff;
   }
-  const cutoffAt = new Date(`${date}T${cutoff}:00`);
+  const cutoffAt = new Date(`${date}T${cutoff}:00${DHAKA_UTC_OFFSET}`);
   return {
     cutoff,
     afterCutoff: Number.isFinite(cutoffAt.getTime()) ? new Date() > cutoffAt : false,

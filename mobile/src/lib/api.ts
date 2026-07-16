@@ -94,7 +94,9 @@ export type HomeRoute = {
 export type SeatCell = { seat: string; name: string; ptype: string; reason: string };
 
 export type TripDetail = {
+  id: string;
   tripType: string;
+  published: { at: string; by: string } | null;
   cutoff: string;
   afterCutoff: boolean;
   startsAt: string | null;

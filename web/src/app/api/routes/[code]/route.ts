@@ -39,7 +39,11 @@ export async function GET(
 
   const uid = String(user._id);
   const serializeTrip = (t: typeof m, late: typeof lateM, tripType: string) => ({
+    id: String(t.trip._id),
     tripType,
+    published: t.trip.publishedPlan
+      ? { at: t.trip.publishedPlan.at, by: t.trip.publishedPlan.by }
+      : null,
     cutoff: t.cutoff,
     afterCutoff: t.afterCutoff,
     startsAt: t.startsAt,
